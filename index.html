@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
+  <title>whereyouat</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#f5f5f0"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root {
+      --bg:#f5f5f0; --white:#ffffff; --black:#0a0a0a;
+      --blue:#1a5cff; --blue-dark:#0033cc; --blue-pale:#e8f0ff;
+      --gray:#888880; --gray-light:#e8e8e3; --border:#d0d0c8;
+      --danger:#ff2d55; --success:#00c853;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--black);font-family:'Unbounded',sans-serif;height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
+
+    /* HEADER */
+    header{z-index:1000;background:var(--black);padding:0 14px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:3px solid var(--blue);}
+    .logo-wrap{display:flex;align-items:center;gap:9px;}
+    .logo-badge{background:var(--blue);color:var(--white);font-family:'DM Mono',monospace;font-size:0.5rem;font-weight:500;letter-spacing:0.1em;padding:4px 7px;border-radius:4px;transform:rotate(-3deg);display:inline-block;}
+    .logo-main{font-size:0.88rem;font-weight:900;color:var(--white);letter-spacing:-0.04em;}
+    .logo-main .hi{color:var(--blue);}
+    .status-bar{display:flex;gap:5px;}
+    .status-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:100px;border:1.5px solid #2a2a2a;background:#161616;font-family:'DM Mono',monospace;font-size:0.47rem;letter-spacing:0.08em;color:#444;transition:all 0.25s;}
+    .status-pill.active{border-color:var(--success);background:rgba(0,200,83,0.1);color:var(--success);}
+    .status-pill.error{border-color:var(--danger);color:var(--danger);}
+    .status-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+    .status-pill.active .status-dot{animation:blink 1.2s ease-in-out infinite;}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+
+    /* FLIGHT BAR */
+    .flight-bar{z-index:999;height:28px;background:var(--blue);display:flex;align-items:center;flex-shrink:0;cursor:pointer;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;}
+    .flight-bar .ticker-track{display:flex;white-space:nowrap;animation:tickerMove 22s linear infinite;position:absolute;left:0;}
+    .ticker-seg{font-family:'DM Mono',monospace;font-size:0.48rem;letter-spacing:0.14em;color:rgba(255,255,255,0.85);padding-right:48px;}
+    @keyframes tickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+    .flight-bar .eta-display{display:none;width:100%;padding:0 12px;align-items:center;justify-content:space-between;gap:8px;}
+    .flight-bar.has-flight .ticker-track{display:none;}
+    .flight-bar.has-flight .eta-display{display:flex;}
+    .eta-flight-num{font-family:'DM Mono',monospace;font-size:0.52rem;font-weight:500;color:var(--white);letter-spacing:0.08em;flex-shrink:0;}
+    .eta-route{font-family:'DM Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.75);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .eta-time{font-family:'DM Mono',monospace;font-size:0.52rem;font-weight:500;color:var(--white);flex-shrink:0;display:flex;align-items:center;gap:5px;}
+    .eta-dot{width:5px;height:5px;border-radius:50%;background:#7fffb2;animation:blink 1.5s ease-in-out infinite;flex-shrink:0;}
+    .eta-countdown{background:rgba(0,0,0,0.25);border-radius:100px;padding:1px 7px;font-size:0.46rem;color:rgba(255,255,255,0.85);}
+
+    /* OVERFLY BAR */
+    .overfly-bar{z-index:998;height:22px;background:var(--black);display:flex;align-items:center;justify-content:center;flex-shrink:0;gap:8px;border-bottom:1px solid #1e1e1e;}
+    .overfly-text{font-family:'DM Mono',monospace;font-size:0.46rem;letter-spacing:0.12em;color:#555;}
+    .overfly-country{font-family:'DM Mono',monospace;font-size:0.46rem;letter-spacing:0.1em;color:var(--blue);}
+
+    /* MAP */
+    #map{flex:1;z-index:1;min-height:0;}
+    .leaflet-tile-pane{filter:grayscale(1) contrast(1.1) brightness(1.08);}
+    .leaflet-container{background:#e8e8e3;}
+
+    /* MARKER */
+    .plane-marker{width:48px;height:48px;position:relative;display:flex;align-items:center;justify-content:center;}
+    .p-ring{position:absolute;width:48px;height:48px;border-radius:50%;border:2px solid var(--blue);animation:rp 2.2s ease-out infinite;}
+    .p-ring-2{animation-delay:0.8s;}
+    @keyframes rp{0%{transform:scale(0.5);opacity:1}100%{transform:scale(1.9);opacity:0}}
+    .p-dot{width:22px;height:22px;border-radius:50%;background:var(--white);border:3px solid var(--black);box-shadow:0 0 0 3px var(--blue),3px 3px 0 rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;position:relative;z-index:2;}
+
+    /* SKY NOTE MARKER */
+    .note-pin{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+    .note-pin-inner{background:var(--white);border:2.5px solid var(--black);border-radius:8px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:0.45rem;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:2px 2px 0 var(--black);position:relative;}
+    .note-pin-inner::after{content:'';position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--black);}
+
+    /* MAP CONTROLS */
+    .map-controls{position:absolute;bottom:82px;right:12px;z-index:1000;display:flex;flex-direction:column;gap:5px;}
+    .ctrl-btn{width:38px;height:38px;border-radius:8px;border:2.5px solid var(--black);background:var(--white);color:var(--black);font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
+    .ctrl-btn:active{background:var(--blue);color:var(--white);box-shadow:none;transform:translate(3px,3px);}
+
+    /* BOTTOM TOOL ROW */
+    .tool-row{position:absolute;bottom:82px;left:12px;z-index:1000;display:flex;gap:7px;}
+    .tool-btn{display:flex;align-items:center;gap:6px;padding:9px 12px;border-radius:8px;border:2.5px solid var(--black);background:var(--white);color:var(--black);font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;letter-spacing:0.06em;cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;white-space:nowrap;}
+    .tool-btn:active{box-shadow:none;transform:translate(3px,3px);}
+    .tool-btn.blue{background:var(--blue);color:var(--white);border-color:var(--black);}
+    .tool-btn.blue:active{background:var(--blue-dark);}
+
+    /* CACHE BTN */
+    .cache-btn{position:absolute;bottom:128px;left:12px;z-index:1000;display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:8px;border:2.5px solid var(--black);background:var(--white);color:var(--black);font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;letter-spacing:0.08em;cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
+    .cache-btn:active{box-shadow:none;transform:translate(3px,3px);}
+    .cache-btn.loading{background:var(--black);color:var(--blue);box-shadow:none;}
+    .spin{display:inline-block;animation:spin 0.75s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* TOAST */
+    .toast{position:absolute;top:112px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:2000;background:var(--black);color:var(--white);border:2.5px solid var(--black);border-radius:100px;padding:7px 16px;font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.06em;white-space:nowrap;opacity:0;pointer-events:none;transition:all 0.28s cubic-bezier(0.34,1.56,0.64,1);box-shadow:3px 3px 0 rgba(0,0,0,0.12);}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    .toast.success{background:var(--success);color:var(--black);border-color:var(--black);}
+    .toast.error{background:var(--danger);color:var(--white);}
+
+    /* INFO BAR */
+    .info-panel{z-index:1000;background:var(--black);display:grid;grid-template-columns:repeat(3,1fr);flex-shrink:0;}
+    .info-item{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 6px;border-right:1px solid #1e1e1e;gap:2px;}
+    .info-item:last-child{border-right:none;}
+    .info-label{font-family:'DM Mono',monospace;font-size:0.42rem;letter-spacing:0.18em;color:#444;text-transform:uppercase;}
+    .info-value{font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:500;color:var(--blue);letter-spacing:0.02em;}
+    @keyframes flicker{0%,100%{opacity:1}40%{opacity:0.2}}
+    .info-value.updating{animation:flicker 0.22s ease;}
+
+    /* OVERLAY */
+    .sheet-overlay{position:fixed;inset:0;z-index:2999;background:rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity 0.3s;}
+    .sheet-overlay.show{opacity:1;pointer-events:all;}
+
+    /* SHARED SHEET BASE */
+    .sheet{position:fixed;bottom:0;left:0;right:0;z-index:3000;background:var(--white);border-top:3px solid var(--black);border-radius:20px 20px 0 0;transform:translateY(100%);transition:transform 0.36s cubic-bezier(0.32,0.72,0,1);box-shadow:0 -6px 0 var(--black);display:flex;flex-direction:column;max-height:88dvh;}
+    .sheet.open{transform:translateY(0);}
+    .sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 0;flex-shrink:0;}
+    .sheet-hd{padding:12px 16px 10px;flex-shrink:0;border-bottom:2px solid var(--black);}
+    .sheet-title{font-size:0.68rem;font-weight:900;letter-spacing:-0.02em;margin-bottom:10px;}
+    .sheet-body{overflow-y:auto;flex:1;padding:14px 16px 28px;}
+
+    /* INPUT STYLES */
+    .inp-row{display:flex;gap:8px;margin-bottom:8px;}
+    .inp-field{display:flex;flex-direction:column;gap:4px;flex:1;}
+    .inp-label{font-family:'DM Mono',monospace;font-size:0.42rem;letter-spacing:0.14em;color:var(--gray);text-transform:uppercase;}
+    .inp{padding:9px 11px;border:2.5px solid var(--black);border-radius:8px;font-family:'DM Mono',monospace;font-size:0.7rem;background:var(--bg);color:var(--black);outline:none;box-shadow:2px 2px 0 var(--black);width:100%;}
+    .inp:focus{border-color:var(--blue);box-shadow:2px 2px 0 var(--blue);}
+    .inp::placeholder{color:var(--border);}
+    .btn-row{display:flex;gap:8px;margin-top:12px;}
+    .btn-primary{flex:1;padding:11px;border-radius:8px;border:2.5px solid var(--black);background:var(--blue);color:var(--white);font-family:'Unbounded',sans-serif;font-size:0.6rem;font-weight:700;cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
+    .btn-primary:active{box-shadow:none;transform:translate(3px,3px);}
+    .btn-sec{padding:11px 14px;border-radius:8px;border:2.5px solid var(--black);background:var(--white);color:var(--black);font-family:'DM Mono',monospace;font-size:0.55rem;cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
+    .btn-sec:active{box-shadow:none;transform:translate(3px,3px);}
+    .hint{font-family:'DM Mono',monospace;font-size:0.46rem;color:var(--gray);letter-spacing:0.05em;margin-top:10px;line-height:1.6;}
+
+    /* DESTINATION SHEET */
+    .weather-block{background:var(--black);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+    .weather-left{display:flex;flex-direction:column;gap:3px;}
+    .weather-city{font-size:0.6rem;font-weight:900;color:var(--white);}
+    .weather-temp{font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:500;color:var(--blue);line-height:1;}
+    .weather-desc{font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.1em;color:#555;text-transform:uppercase;}
+    .weather-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+    .weather-icon{font-size:2.4rem;line-height:1;}
+    .weather-meta{font-family:'DM Mono',monospace;font-size:0.48rem;letter-spacing:0.08em;color:#555;text-align:right;}
+    .sec-head{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+    .sec-label{font-size:0.55rem;font-weight:900;letter-spacing:0.04em;text-transform:uppercase;}
+    .sec-tag{font-family:'DM Mono',monospace;font-size:0.42rem;padding:2px 7px;border-radius:100px;background:var(--blue-pale);color:var(--blue);letter-spacing:0.1em;}
+    .places-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+    .place-card{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+    .place-card:active{border-color:var(--blue);background:var(--blue-pale);}
+    .place-emoji{font-size:1.4rem;flex-shrink:0;width:36px;text-align:center;}
+    .place-info{flex:1;min-width:0;}
+    .place-name{font-size:0.6rem;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .place-meta{font-family:'DM Mono',monospace;font-size:0.48rem;color:var(--gray);letter-spacing:0.04em;margin-top:2px;}
+    .place-tag{font-family:'DM Mono',monospace;font-size:0.42rem;padding:3px 8px;border-radius:100px;border:1.5px solid var(--border);color:var(--gray);white-space:nowrap;flex-shrink:0;}
+    .trend-grid{display:flex;flex-wrap:wrap;gap:7px;}
+    .trend-chip{display:flex;align-items:center;gap:5px;padding:7px 11px;border-radius:100px;border:2px solid var(--black);background:var(--white);font-family:'DM Mono',monospace;font-size:0.52rem;cursor:pointer;box-shadow:2px 2px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
+    .trend-chip:active{box-shadow:none;transform:translate(2px,2px);background:var(--blue);color:var(--white);border-color:var(--blue);}
+    .trend-chip.hot{border-color:var(--blue);background:var(--blue-pale);color:var(--blue);}
+    .skeleton{background:linear-gradient(90deg,var(--gray-light) 25%,var(--border) 50%,var(--gray-light) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .skel-weather{height:80px;border-radius:12px;margin-bottom:14px;}
+    .skel-card{height:58px;border-radius:10px;margin-bottom:8px;}
+
+    /* TIMEZONE SHEET */
+    .tz-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+    .tz-card{background:var(--black);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px;}
+    .tz-label{font-family:'DM Mono',monospace;font-size:0.42rem;letter-spacing:0.14em;color:#555;text-transform:uppercase;}
+    .tz-city{font-size:0.55rem;font-weight:900;color:var(--white);}
+    .tz-time{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:500;color:var(--blue);line-height:1;margin-top:2px;}
+    .tz-date{font-family:'DM Mono',monospace;font-size:0.44rem;color:#555;letter-spacing:0.06em;margin-top:2px;}
+    .tz-diff{font-family:'DM Mono',monospace;font-size:0.44rem;padding:2px 8px;border-radius:100px;background:var(--blue-pale);color:var(--blue);display:inline-block;margin-top:4px;}
+
+    /* SLEEP SHEET */
+    .sleep-card{background:var(--black);border-radius:12px;padding:16px;margin-bottom:12px;}
+    .sleep-head{font-size:0.58rem;font-weight:900;color:var(--white);margin-bottom:10px;}
+    .sleep-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-top:1px solid #1e1e1e;}
+    .sleep-emoji{font-size:1.2rem;flex-shrink:0;margin-top:2px;}
+    .sleep-info{flex:1;}
+    .sleep-title{font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;color:var(--blue);}
+    .sleep-desc{font-family:'DM Mono',monospace;font-size:0.46rem;color:#555;letter-spacing:0.04em;margin-top:3px;line-height:1.5;}
+
+    /* SKY NOTES SHEET */
+    .note-compose{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+    .note-textarea{padding:10px 12px;border:2.5px solid var(--black);border-radius:8px;font-family:'DM Mono',monospace;font-size:0.68rem;background:var(--bg);color:var(--black);outline:none;box-shadow:2px 2px 0 var(--black);resize:none;height:72px;line-height:1.5;}
+    .note-textarea:focus{border-color:var(--blue);box-shadow:2px 2px 0 var(--blue);}
+    .note-meta-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+    .note-char-count{font-family:'DM Mono',monospace;font-size:0.44rem;color:var(--gray);}
+    .notes-list{display:flex;flex-direction:column;gap:8px;}
+    .note-item{padding:11px 13px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.1s;}
+    .note-item:active{border-color:var(--blue);background:var(--blue-pale);}
+    .note-item-text{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--black);line-height:1.5;margin-bottom:6px;}
+    .note-item-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+    .note-item-loc{font-family:'DM Mono',monospace;font-size:0.44rem;color:var(--gray);letter-spacing:0.04em;}
+    .note-item-time{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--border);letter-spacing:0.04em;}
+    .note-empty{font-family:'DM Mono',monospace;font-size:0.58rem;color:var(--gray);text-align:center;padding:20px 0;line-height:1.8;}
+
+    /* FLIGHT SHEET */
+    .flight-sheet{z-index:3100;}
+
+    /* Leaflet */
+    .leaflet-control-zoom{display:none !important;}
+    .leaflet-attribution-flag{display:none !important;}
+    .leaflet-control-attribution{font-size:0.44rem !important;background:rgba(245,245,240,0.85) !important;color:var(--gray) !important;border-radius:4px !important;}
+    .leaflet-control-attribution a{color:var(--gray) !important;}
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-wrap">
+    <div class="logo-badge">✈ GPS</div>
+    <div class="logo-main">where<span class="hi">you</span>at</div>
+  </div>
+  <div class="status-bar">
+    <div class="status-pill" id="gps-status"><div class="status-dot"></div><span>GPS</span></div>
+    <div class="status-pill" id="cache-status"><div class="status-dot"></div><span>CACHE</span></div>
+  </div>
+</header>
+
+<!-- FLIGHT ETA BAR -->
+<div class="flight-bar" id="flight-bar">
+  <div class="ticker-track">
+    <span class="ticker-seg">✦ OFFLINE GPS TRACKER ✦ TAP TO ADD FLIGHT ✦ NO WIFI NEEDED ✦ WORKS AT 35,000FT ✦</span>
+    <span class="ticker-seg">✦ OFFLINE GPS TRACKER ✦ TAP TO ADD FLIGHT ✦ NO WIFI NEEDED ✦ WORKS AT 35,000FT ✦</span>
+  </div>
+  <div class="eta-display">
+    <div class="eta-flight-num" id="eta-fn">—</div>
+    <div class="eta-route" id="eta-route">—</div>
+    <div class="eta-time"><div class="eta-dot"></div><span id="eta-val">—</span><span class="eta-countdown" id="eta-cd"></span></div>
+  </div>
+</div>
+
+<!-- OVERFLY BAR -->
+<div class="overfly-bar">
+  <span class="overfly-text">CURRENTLY OVER</span>
+  <span class="overfly-country" id="overfly-country">— LOCATING —</span>
+</div>
+
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- MAP CONTROLS (right) -->
+<div class="map-controls">
+  <button class="ctrl-btn" id="center-btn">⊕</button>
+  <button class="ctrl-btn" id="zoom-in-btn">+</button>
+  <button class="ctrl-btn" id="zoom-out-btn">−</button>
+</div>
+
+<!-- TOOL ROW (bottom left) -->
+<div class="tool-row">
+  <button class="tool-btn blue" id="dest-btn">📍 DEST</button>
+  <button class="tool-btn" id="tz-btn">🕐 TIME</button>
+  <button class="tool-btn" id="sleep-btn">💤 SLEEP</button>
+  <button class="tool-btn" id="notes-btn">✍ SKY</button>
+</div>
+
+<!-- CACHE BTN -->
+<button class="cache-btn" id="cache-btn">
+  <span id="cache-icon">↓</span>
+  <span id="cache-label">SAVE MAP</span>
+</button>
+
+<div class="toast" id="toast"></div>
+
+<!-- GPS INFO BAR -->
+<div class="info-panel">
+  <div class="info-item"><div class="info-label">LAT</div><div class="info-value" id="val-lat">——</div></div>
+  <div class="info-item"><div class="info-label">LNG</div><div class="info-value" id="val-lon">——</div></div>
+  <div class="info-item"><div class="info-label">ACC</div><div class="info-value" id="val-acc">——</div></div>
+</div>
+
+<!-- OVERLAY -->
+<div class="sheet-overlay" id="sheet-overlay"></div>
+
+<!-- FLIGHT SHEET -->
+<div class="sheet flight-sheet" id="flight-sheet" style="z-index:3100;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hd">
+    <div class="sheet-title">✈ MY FLIGHT</div>
+    <div class="inp-row">
+      <div class="inp-field"><div class="inp-label">Flight No.</div><input class="inp" id="fs-fn" type="text" placeholder="KE123" maxlength="8" style="text-transform:uppercase;"/></div>
+      <div class="inp-field"><div class="inp-label">From</div><input class="inp" id="fs-from" type="text" placeholder="ICN" maxlength="4" style="text-transform:uppercase;"/></div>
+      <div class="inp-field"><div class="inp-label">To</div><input class="inp" id="fs-to" type="text" placeholder="CDG" maxlength="4" style="text-transform:uppercase;"/></div>
+    </div>
+    <div class="inp-row">
+      <div class="inp-field"><div class="inp-label">Departure (local)</div><input class="inp" id="fs-dep" type="time"/></div>
+      <div class="inp-field"><div class="inp-label">Duration</div><input class="inp" id="fs-dur" type="text" placeholder="11h 20m"/></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" id="fs-save">SAVE ✈</button>
+      <button class="btn-sec" id="fs-clear">CLEAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- DESTINATION SHEET -->
+<div class="sheet" id="dest-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hd">
+    <div class="sheet-title">WHERE YOU HEADED?</div>
+    <div class="inp-row">
+      <input class="inp" id="dest-input" type="text" placeholder="Seoul, Tokyo, Paris..." autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;"/>
+      <button class="btn-primary" id="dest-go" style="flex:0;padding:9px 14px;margin-top:0;">GO ↗</button>
+    </div>
+  </div>
+  <div class="sheet-body" id="dest-body">
+    <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--gray);text-align:center;padding:20px 0;">Enter a destination to see<br/>weather + places + what's trending ✦</div>
+  </div>
+</div>
+
+<!-- TIMEZONE SHEET -->
+<div class="sheet" id="tz-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hd">
+    <div class="sheet-title">🕐 TIME ZONES</div>
+    <div class="inp-row" style="margin-bottom:0;">
+      <input class="inp" id="tz-dest-input" type="text" placeholder="Destination city..." autocomplete="off" style="flex:1;"/>
+      <button class="btn-primary" id="tz-go" style="flex:0;padding:9px 14px;">SET</button>
+    </div>
+  </div>
+  <div class="sheet-body" id="tz-body">
+    <div id="tz-clocks" class="tz-grid"></div>
+    <div class="hint" id="tz-hint">Enter a destination city to compare time zones.</div>
+  </div>
+</div>
+
+<!-- SLEEP SHEET -->
+<div class="sheet" id="sleep-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hd"><div class="sheet-title">💤 SLEEP GUIDE</div></div>
+  <div class="sheet-body" id="sleep-body">
+    <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--gray);text-align:center;padding:20px 0;">Add your flight first to get<br/>personalised sleep advice ✦</div>
+  </div>
+</div>
+
+<!-- SKY NOTES SHEET -->
+<div class="sheet" id="notes-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-hd">
+    <div class="sheet-title">✍ SKY NOTES</div>
+    <div class="note-compose">
+      <textarea class="note-textarea" id="note-text" maxlength="120" placeholder="Leave a note from the sky... others will see it on the map ✦"></textarea>
+      <div class="note-meta-row">
+        <span class="note-char-count" id="note-chars">0 / 120</span>
+        <button class="btn-primary" id="note-post" style="flex:0;padding:9px 16px;">POST ✦</button>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-body">
+    <div class="sec-head"><div class="sec-label">📍 NOTES FROM THE SKY <span class="sec-tag">SHARED</span></div></div>
+    <div class="notes-list" id="notes-list"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ── UTILS ──
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+const $=id=>document.getElementById(id);
+const toast=(msg,type='')=>{ const t=$('toast'); t.textContent=msg; t.className='toast show '+type; setTimeout(()=>t.className='toast',3000); };
+function upd(el,v){ el.classList.add('updating'); el.textContent=v; setTimeout(()=>el.classList.remove('updating'),220); }
+
+// ── MAP ──
+const map = L.map('map',{zoomControl:false,attributionControl:true,tap:true,tapTolerance:15}).setView([37.5665,126.9780],5);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap',crossOrigin:true}).addTo(map);
+
+const planeIcon = L.divIcon({className:'',html:`<div class="plane-marker"><div class="p-ring"></div><div class="p-ring p-ring-2"></div><div class="p-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="#1a5cff"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div></div>`,iconSize:[48,48],iconAnchor:[24,24]});
+
+let marker=null, userLat=null, userLon=null, isCaching=false;
+let overflyCurrent='', overflyTimer=null;
+
+// ── GPS ──
+function setGpsStatus(s){ $('gps-status').className='status-pill '+s; $('gps-status').querySelector('span').textContent=s==='active'?'GPS ●':s==='error'?'GPS ✕':'GPS'; }
+
+function onPos({coords:{latitude:lat,longitude:lon,accuracy:acc}}){
+  userLat=lat; userLon=lon; setGpsStatus('active');
+  upd($('val-lat'),lat.toFixed(4)+'°');
+  upd($('val-lon'),lon.toFixed(4)+'°');
+  upd($('val-acc'),acc<1000?Math.round(acc)+'m':(acc/1000).toFixed(1)+'km');
+  if(!marker){ marker=L.marker([lat,lon],{icon:planeIcon}).addTo(map); map.setView([lat,lon],8); }
+  else marker.setLatLng([lat,lon]);
+  // overfly update every 60s or first time
+  if(!overflyCurrent) updateOverfly(lat,lon);
+}
+function onErr(e){ setGpsStatus('error'); toast(e.code===1?'GPS 권한을 허용해주세요':e.code===2?'GPS 신호 없음':'GPS 오류','error'); }
+navigator.geolocation
+  ? navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,timeout:10000,maximumAge:3000})
+  : (setGpsStatus('error'),toast('GPS 미지원 기기','error'));
+
+// ── OVERFLY (which country) ──
+async function updateOverfly(lat,lon){
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=3`);
+    const d = await r.json();
+    const country = d.address?.country || d.display_name?.split(',').pop().trim() || '?';
+    const code = d.address?.country_code?.toUpperCase() || '';
+    overflyCurrent = country;
+    $('overfly-country').textContent = (code ? code + ' · ' : '') + country.toUpperCase();
+    // refresh every 2 min
+    clearTimeout(overflyTimer);
+    overflyTimer = setTimeout(()=>{ if(userLat) updateOverfly(userLat,userLon); }, 120000);
+  } catch { $('overfly-country').textContent = 'OFFLINE'; }
+}
+
+// ── TILE CACHE ──
+function llt(lat,lon,z){ const n=2**z,x=Math.floor((lon+180)/360*n),r=lat*Math.PI/180,y=Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n); return{x:Math.max(0,Math.min(n-1,x)),y:Math.max(0,Math.min(n-1,y))}; }
+async function cacheTiles(){
+  if(isCaching)return; isCaching=true;
+  const btn=$('cache-btn'),icon=$('cache-icon'),label=$('cache-label');
+  btn.classList.add('loading'); icon.className='spin'; icon.textContent='↻'; label.textContent='SAVING...';
+  const b=map.getBounds(),z=map.getZoom(),urls=[];
+  for(let zz=Math.max(z-2,3);zz<=Math.min(z+2,14);zz++){
+    const nw=llt(b.getNorth(),b.getWest(),zz),se=llt(b.getSouth(),b.getEast(),zz);
+    for(let x=nw.x;x<=se.x;x++) for(let y=nw.y;y<=se.y;y++) urls.push(`https://${'abc'[Math.abs(x+y)%3]}.tile.openstreetmap.org/${zz}/${x}/${y}.png`);
+  }
+  if(urls.length>400){ toast('Too many tiles — zoom in','error'); isCaching=false; btn.classList.remove('loading'); icon.className=''; icon.textContent='↓'; label.textContent='SAVE MAP'; return; }
+  label.textContent='0/'+urls.length;
+  if('caches' in window){
+    const c=await caches.open('whereyouat-tiles-v1'); let n=0;
+    for(const u of urls){ try{ if(!await c.match(u))await c.add(u); n++; if(n%10===0)label.textContent=n+'/'+urls.length; }catch{} }
+    $('cache-status').className='status-pill active';
+    toast('✓ '+n+' tiles saved!','success');
+  } else toast('Cache API not supported','error');
+  isCaching=false; btn.classList.remove('loading'); icon.className=''; icon.textContent='↓'; label.textContent='SAVE MAP';
+}
+$('cache-btn').addEventListener('click',cacheTiles);
+$('center-btn').addEventListener('click',()=>userLat?map.flyTo([userLat,userLon],Math.max(map.getZoom(),8),{duration:0.6}):toast('GPS 신호 대기 중...',''));
+$('zoom-in-btn').addEventListener('click',()=>map.zoomIn());
+$('zoom-out-btn').addEventListener('click',()=>map.zoomOut());
+(async()=>{ if('caches' in window){ const c=await caches.open('whereyouat-tiles-v1'); if((await c.keys()).length>0)$('cache-status').className='status-pill active'; } })();
+
+// ── SHEET MANAGER ──
+const sheets=['flight-sheet','dest-sheet','tz-sheet','sleep-sheet','notes-sheet'];
+function openSheet(id){
+  sheets.forEach(s=>document.getElementById(s).classList.remove('open'));
+  $(id).classList.add('open');
+  $('sheet-overlay').classList.add('show');
+}
+function closeAll(){
+  sheets.forEach(s=>document.getElementById(s).classList.remove('open'));
+  $('sheet-overlay').classList.remove('show');
+}
+$('sheet-overlay').addEventListener('click',closeAll);
+
+// ── FLIGHT ETA ──
+let flightTimer=null;
+function parseDur(s){
+  if(!s)return null; s=s.trim().toLowerCase();
+  const hm=s.match(/(\d+)h\s*(\d*)m?/); if(hm)return parseInt(hm[1])*60+(parseInt(hm[2])||0);
+  const colon=s.match(/^(\d+):(\d+)$/); if(colon)return parseInt(colon[1])*60+parseInt(colon[2]);
+  const m=parseInt(s); return isNaN(m)?null:m;
+}
+function fmtCountdown(ms){ if(ms<=0)return'LANDED'; const t=Math.floor(ms/60000),h=Math.floor(t/60),m=t%60; return h>0?h+'h '+m+'m left':m+'m left'; }
+function saveFlt(d){ try{localStorage.setItem('wya_flt',JSON.stringify(d));}catch{} }
+function loadFlt(){ try{const d=localStorage.getItem('wya_flt');return d?JSON.parse(d):null;}catch{return null;} }
+function applyFlt(d){
+  if(!d)return;
+  const now=new Date(),parts=d.dep.split(':'),dep=new Date(now);
+  dep.setHours(parseInt(parts[0]),parseInt(parts[1]),0,0);
+  if(now-dep>12*3600000) dep.setDate(dep.getDate()+1);
+  const arr=dep.getTime()+d.dur*60000;
+  const eta=new Date(arr).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  $('eta-fn').textContent=d.fn.toUpperCase();
+  $('eta-route').textContent=d.from.toUpperCase()+' → '+d.to.toUpperCase();
+  $('eta-val').textContent='ETA '+eta;
+  $('flight-bar').classList.add('has-flight');
+  const tick=()=>$('eta-cd').textContent=fmtCountdown(arr-Date.now());
+  tick(); if(flightTimer)clearInterval(flightTimer); flightTimer=setInterval(tick,30000);
+  // also update sleep sheet
+  renderSleep(d);
+}
+$('flight-bar').addEventListener('click',()=>{
+  openSheet('flight-sheet');
+  const s=loadFlt(); if(s){ $('fs-fn').value=s.fn||''; $('fs-from').value=s.from||''; $('fs-to').value=s.to||''; $('fs-dep').value=s.dep||''; $('fs-dur').value=s.durRaw||''; }
+});
+$('fs-save').addEventListener('click',()=>{
+  const fn=$('fs-fn').value.trim(),from=$('fs-from').value.trim(),to=$('fs-to').value.trim(),dep=$('fs-dep').value.trim(),durRaw=$('fs-dur').value.trim();
+  if(!fn||!dep||!durRaw){toast('편명, 출발시간, 비행시간을 입력해주세요','error');return;}
+  const dur=parseDur(durRaw); if(!dur){toast('비행시간 형식: 11h 20m','error');return;}
+  const d={fn,from:from||'???',to:to||'???',dep,dur,durRaw};
+  saveFlt(d); applyFlt(d); closeAll(); toast('✈ '+fn.toUpperCase()+' 등록 완료!','success');
+});
+$('fs-clear').addEventListener('click',()=>{
+  localStorage.removeItem('wya_flt'); $('flight-bar').classList.remove('has-flight');
+  if(flightTimer)clearInterval(flightTimer);
+  ['fs-fn','fs-from','fs-to','fs-dep','fs-dur'].forEach(id=>$(id).value='');
+  closeAll(); toast('항공편 삭제됨','');
+});
+const savedFlt=loadFlt(); if(savedFlt)applyFlt(savedFlt);
+
+// ── DESTINATION ──
+let destCache={};
+$('dest-btn').addEventListener('click',()=>{ openSheet('dest-sheet'); setTimeout(()=>$('dest-input').focus(),400); });
+$('dest-go').addEventListener('click',handleDest);
+$('dest-input').addEventListener('keydown',e=>{ if(e.key==='Enter')handleDest(); });
+async function handleDest(){
+  const city=$('dest-input').value.trim(); if(!city)return;
+  $('dest-body').innerHTML='<div class="skeleton skel-weather"></div><div class="skeleton skel-card"></div><div class="skeleton skel-card"></div><div class="skeleton skel-card"></div>';
+  const [wx,content]=await Promise.all([fetchWeather(city),fetchPlaces(city)]);
+  let html='';
+  if(wx) html+=`<div class="weather-block"><div class="weather-left"><div class="weather-city">${wx.name.toUpperCase()}, ${wx.country.toUpperCase()}</div><div class="weather-temp">${wx.temp}°C</div><div class="weather-desc">${wxDesc(wx.code)}</div></div><div class="weather-right"><div class="weather-icon">${wxIcon(wx.code)}</div><div class="weather-meta">💨 ${wx.wind}km/h · 💧 ${wx.humidity}%</div></div></div>`;
+  else html+=`<div class="weather-block"><div class="weather-left"><div class="weather-city">${city.toUpperCase()}</div><div class="weather-desc" style="color:#555;margin-top:6px;font-size:0.48rem;">WEATHER UNAVAILABLE OFFLINE</div></div><div class="weather-right"><div class="weather-icon">🌍</div></div></div>`;
+  if(content.top_places?.length){
+    html+=`<div class="sec-head"><div class="sec-label">📍 MUST VISIT <span class="sec-tag">TOP PICKS</span></div></div><div class="places-grid">`;
+    content.top_places.forEach(p=>{ html+=`<div class="place-card"><div class="place-emoji">${p.emoji}</div><div class="place-info"><div class="place-name">${p.name}</div><div class="place-meta">${p.tip}</div></div><div class="place-tag">${p.category}</div></div>`; });
+    html+=`</div>`;
+  }
+  if(content.trending?.length){
+    html+=`<div class="sec-head" style="margin-top:14px;"><div class="sec-label">🔥 TRENDING <span class="sec-tag">NOW</span></div></div><div class="trend-grid">`;
+    content.trending.forEach(t=>{ html+=`<div class="trend-chip${t.hot?' hot':''}">${t.emoji} ${t.label}</div>`; });
+    html+=`</div>`;
+  }
+  $('dest-body').innerHTML=html;
+}
+async function fetchWeather(city){
+  try{
+    const g=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=en&format=json');
+    const gd=await g.json(); if(!gd.results?.length)return null;
+    const {latitude:lat,longitude:lon,name,country}=gd.results[0];
+    const w=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weathercode,windspeed_10m,relative_humidity_2m&temperature_unit=celsius&windspeed_unit=kmh');
+    const wd=await w.json(); const c=wd.current;
+    return{name,country,temp:Math.round(c.temperature_2m),code:c.weathercode,wind:Math.round(c.windspeed_10m),humidity:c.relative_humidity_2m};
+  }catch{return null;}
+}
+function wxIcon(c){ if(c===0)return'☀️';if(c<=2)return'⛅';if(c<=3)return'☁️';if(c<=49)return'🌫️';if(c<=59)return'🌦️';if(c<=69)return'🌧️';if(c<=79)return'❄️';if(c<=82)return'🌦️';if(c<=99)return'⛈️';return'🌡️'; }
+function wxDesc(c){ if(c===0)return'CLEAR SKY';if(c<=2)return'PARTLY CLOUDY';if(c<=3)return'OVERCAST';if(c<=49)return'FOGGY';if(c<=59)return'DRIZZLE';if(c<=69)return'RAINY';if(c<=79)return'SNOWY';if(c<=82)return'RAIN SHOWERS';if(c<=99)return'THUNDERSTORM';return'UNKNOWN'; }
+async function fetchPlaces(city){
+  if(destCache[city.toLowerCase()])return destCache[city.toLowerCase()];
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:'You are a travel guide. For city "'+city+'", return ONLY valid JSON (no markdown): {"top_places":[{"emoji":"","name":"","category":"","tip":""}],"trending":[{"emoji":"","label":"","hot":false}]} — 5 places, 8 trending items.'}]})});
+    const data=await res.json();
+    const text=data.content?.find(b=>b.type==='text')?.text||'{}';
+    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+    destCache[city.toLowerCase()]=parsed; return parsed;
+  }catch{ return{top_places:[{emoji:'🏛️',name:'City Center',category:'landmark',tip:'Best visited in the morning.'},{emoji:'🍜',name:'Local Market',category:'food',tip:'Try the street food here.'},{emoji:'🌿',name:'City Park',category:'nature',tip:'Great for an evening walk.'},{emoji:'🎨',name:'Art District',category:'culture',tip:'Weekend galleries are free.'},{emoji:'☕',name:'Old Town Café',category:'cafe',tip:'Famous for local brews.'}],trending:[{emoji:'🔥',label:'Local Eats',hot:true},{emoji:'📸',label:'Photo Spots',hot:true},{emoji:'🛍️',label:'Night Market',hot:false},{emoji:'🍵',label:'Specialty Coffee',hot:true},{emoji:'🏃',label:'Running Routes',hot:false},{emoji:'🎵',label:'Live Music',hot:false},{emoji:'🌅',label:'Sunrise Views',hot:false},{emoji:'🍰',label:'Dessert Cafes',hot:true}]}; }
+}
+
+// ── TIMEZONE ──
+let tzDestCity='', tzTimer=null;
+$('tz-btn').addEventListener('click',()=>{ openSheet('tz-sheet'); renderTzClocks(); setTimeout(()=>$('tz-dest-input').focus(),400); });
+$('tz-go').addEventListener('click',setTzDest);
+$('tz-dest-input').addEventListener('keydown',e=>{ if(e.key==='Enter')setTzDest(); });
+
+async function setTzDest(){
+  const city=$('tz-dest-input').value.trim(); if(!city)return;
+  tzDestCity=city;
+  $('tz-hint').textContent='Loading...';
+  try{
+    const g=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=en&format=json');
+    const gd=await g.json();
+    if(gd.results?.length){ tzDestCity=gd.results[0].name+' ('+gd.results[0].country+')'; }
+  }catch{}
+  renderTzClocks();
+  if(!tzTimer) tzTimer=setInterval(renderTzClocks,30000);
+}
+
+function renderTzClocks(){
+  const now=new Date();
+  let html='';
+  // current location
+  html+=`<div class="tz-card"><div class="tz-label">YOU ARE HERE</div><div class="tz-city">${overflyCurrent||'CURRENT LOCATION'}</div><div class="tz-time">${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div class="tz-date">${now.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</div></div>`;
+  // destination
+  if(tzDestCity){
+    const flt=loadFlt();
+    if(flt&&flt.to&&flt.to!=='???'){
+      // use saved dest
+      html+=`<div class="tz-card"><div class="tz-label">DESTINATION</div><div class="tz-city">${flt.to.toUpperCase()}</div><div class="tz-time">${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div class="tz-date">${now.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</div><div class="tz-diff">Set exact city for TZ diff</div></div>`;
+    } else {
+      html+=`<div class="tz-card"><div class="tz-label">DESTINATION</div><div class="tz-city">${tzDestCity.toUpperCase()}</div><div class="tz-time">${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div class="tz-date">${now.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</div></div>`;
+    }
+    $('tz-hint').textContent='💡 Times shown in your device timezone. For exact destination time, set your phone to destination timezone before landing.';
+  } else {
+    html+=`<div class="tz-card" style="border:2px dashed var(--border);background:transparent;"><div class="tz-label" style="color:var(--border);">DESTINATION</div><div class="tz-city" style="color:var(--border);margin-top:8px;">Enter city above</div></div>`;
+  }
+  $('tz-clocks').innerHTML=html;
+}
+
+// ── SLEEP GUIDE ──
+$('sleep-btn').addEventListener('click',()=>{ openSheet('sleep-sheet'); const flt=loadFlt(); if(flt)renderSleep(flt); });
+
+function renderSleep(flt){
+  const dur=flt.dur; // minutes
+  const hours=Math.floor(dur/60), mins=dur%60;
+  let tips=[];
+  if(dur<180){ tips=[{e:'🌙',t:'SHORT FLIGHT',d:'Under 3 hours — skip sleep. Stay hydrated and do light stretches instead.'},{e:'💧',t:'HYDRATE',d:'Cabin air is very dry. Drink water every hour to stay fresh on arrival.'},{e:'🎧',t:'NOISE CANCEL',d:'Use headphones to reduce fatigue even without sleeping.'}]; }
+  else if(dur<420){ tips=[{e:'😴',t:'1-2 HOUR NAP',d:'A short sleep cycle (90 min) will refresh you without grogginess.'},{e:'⏰',t:'SET AN ALARM',d:'Wake '+(Math.round(dur*0.6/60))+'h after takeoff to have time to freshen up.'},{e:'💊',t:'SKIP MELATONIN',d:'Too short to need it. A neck pillow and eye mask is enough.'},{e:'🍽️',t:'EAT LIGHT',d:'Heavy meals make sleep quality worse at altitude.'}]; }
+  else { tips=[{e:'🌙',t:'SLEEP FIRST HALF',d:'Try to sleep in the first '+(Math.round(dur*0.5/60))+'h. Match destination night cycle.'},{e:'💊',t:'MELATONIN OK',d:'0.5–3mg melatonin 30 min before you want to sleep can help.'},{e:'🚶',t:'MOVE BEFORE SLEEP',d:'Walk the aisle once before sleeping to improve circulation.'},{e:'☀️',t:'WAKE BEFORE LANDING',d:'Stay awake the last 2h to adjust to destination daylight.'},{e:'👁️',t:'EYE MASK + EARPLUGS',d:'Blocking light and sound is the most effective sleep hack.'}]; }
+  let html=`<div class="sleep-card"><div class="sleep-head">✈ ${flt.fn.toUpperCase()} · ${hours}h ${mins}m FLIGHT</div>`;
+  tips.forEach(tip=>{ html+=`<div class="sleep-row"><div class="sleep-emoji">${tip.e}</div><div class="sleep-info"><div class="sleep-title">${tip.t}</div><div class="sleep-desc">${tip.d}</div></div></div>`; });
+  html+=`</div><div class="hint">💡 Adjust for your body. These are general guidelines based on flight duration.</div>`;
+  $('sleep-body').innerHTML=html;
+}
+
+// ── SKY NOTES (shared via Storage API) ──
+const NOTE_KEY='sky-notes-global';
+let noteMarkers={};
+
+$('notes-btn').addEventListener('click',()=>{ openSheet('notes-sheet'); loadNotes(); });
+$('note-text').addEventListener('input',()=>{ $('note-chars').textContent=$('note-text').value.length+' / 120'; });
+$('note-post').addEventListener('click',postNote);
+
+async function postNote(){
+  const text=$('note-text').value.trim();
+  if(!text){toast('메모를 입력해주세요','error');return;}
+  if(!userLat){toast('GPS 신호가 필요해요','error');return;}
+  const note={id:Date.now(),text,lat:parseFloat(userLat.toFixed(4)),lon:parseFloat(userLon.toFixed(4)),country:overflyCurrent||'?',ts:new Date().toISOString()};
+  try{
+    const existing=await getSharedNotes();
+    existing.unshift(note);
+    const trimmed=existing.slice(0,100); // max 100 notes
+    await window.storage.set(NOTE_KEY,JSON.stringify(trimmed),true);
+    $('note-text').value=''; $('note-chars').textContent='0 / 120';
+    toast('✦ 메모 등록됨!','success');
+    renderNoteOnMap(note);
+    loadNotes();
+  }catch(e){ console.error(e); toast('저장 실패','error'); }
+}
+
+async function getSharedNotes(){
+  try{ const r=await window.storage.get(NOTE_KEY,true); return r?JSON.parse(r.value):[]; }catch{ return[]; }
+}
+
+async function loadNotes(){
+  const notes=await getSharedNotes();
+  if(!notes.length){ $('notes-list').innerHTML='<div class="note-empty">No sky notes yet.<br/>Be the first to leave one ✦</div>'; return; }
+  $('notes-list').innerHTML=notes.map(n=>`<div class="note-item" onclick="flyToNote(${n.lat},${n.lon})"><div class="note-item-text">${escHtml(n.text)}</div><div class="note-item-meta"><span class="note-item-loc">📍 ${n.country||'?'} · ${n.lat},${n.lon}</span><span class="note-item-time">${timeAgo(n.ts)}</span></div></div>`).join('');
+  // render on map
+  notes.forEach(renderNoteOnMap);
+}
+
+function renderNoteOnMap(note){
+  const key=note.id;
+  if(noteMarkers[key])return;
+  const icon=L.divIcon({className:'note-pin',html:`<div class="note-pin-inner">${escHtml(note.text.slice(0,28)+(note.text.length>28?'…':''))}</div>`,iconAnchor:[60,28]});
+  const m=L.marker([note.lat,note.lon],{icon}).addTo(map);
+  m.on('click',()=>{ toast(note.text,''); });
+  noteMarkers[key]=m;
+}
+
+function flyToNote(lat,lon){ map.flyTo([lat,lon],8,{duration:0.8}); closeAll(); }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function timeAgo(ts){
+  const d=Date.now()-new Date(ts).getTime(),m=Math.floor(d/60000),h=Math.floor(m/60),dy=Math.floor(h/24);
+  if(m<1)return'just now'; if(m<60)return m+'m ago'; if(h<24)return h+'h ago'; return dy+'d ago';
+}
+
+// load notes on map start
+setTimeout(()=>{ getSharedNotes().then(notes=>notes.forEach(renderNoteOnMap)); },1500);
+
+// ── TOOL BTN BINDINGS ──
+document.querySelectorAll('.tool-btn').forEach(b=>{ b.style.fontSize='0.52rem'; });
+</script>
+</body>
+</html>
