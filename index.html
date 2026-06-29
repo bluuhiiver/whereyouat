@@ -3,498 +3,216 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Skinly — Know Your Ingredients</title>
+  <title>Skinly — Ingredient Analyzer</title>
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#E11D48"/>
-  <meta name="description" content="Personalized skincare ingredient analyzer. Find products matched to your skin type."/>
+  <meta name="description" content="Personalized skincare ingredient analyzer."/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --bg: #F7F7F5;
-      --white: #FFFFFF;
-      --black: #18181B;
-      --primary: #E11D48;
-      --primary-dark: #BE123C;
-      --primary-light: #FFF1F2;
-      --success: #059669;
-      --success-bg: #ECFDF5;
-      --warning: #B45309;
-      --warning-bg: #FFFBEB;
-      --danger: #DC2626;
-      --danger-bg: #FEF2F2;
-      --info: #0369A1;
-      --info-bg: #E0F2FE;
-      --gray: #71717A;
-      --gray-light: #F4F4F5;
-      --border: #E4E4E7;
-      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --bg:#F7F7F5; --white:#fff; --black:#18181B;
+      --primary:#E11D48; --primary-dark:#BE123C; --primary-light:#FFF1F2;
+      --success:#059669; --success-bg:#ECFDF5;
+      --warning:#B45309; --warning-bg:#FFFBEB;
+      --danger:#DC2626; --danger-bg:#FEF2F2;
+      --info:#0369A1; --info-bg:#E0F2FE;
+      --gray:#71717A; --gray-light:#F4F4F5; --border:#E4E4E7;
+      --font:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,sans-serif;
     }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--black);
-      min-height: 100dvh;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* VIEWS */
-    .view { display: none; flex-direction: column; min-height: 100dvh; }
-    .view.active { display: flex; animation: fadeUp 0.22s ease; }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:var(--font);background:var(--bg);color:var(--black);min-height:100dvh;-webkit-font-smoothing:antialiased;}
+    .view{display:none;flex-direction:column;min-height:100dvh;}
+    .view.active{display:flex;animation:fadeUp .2s ease;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
     /* ── ONBOARDING ── */
-    #view-onboard { background: var(--white); }
-
-    .ob-progress {
-      display: flex;
-      gap: 6px;
-      padding: 20px 24px 0;
-    }
-    .ob-prog-bar {
-      height: 4px;
-      flex: 1;
-      border-radius: 2px;
-      background: var(--border);
-      transition: background 0.3s;
-    }
-    .ob-prog-bar.done { background: var(--primary); }
-
-    .ob-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 32px 24px 28px;
-    }
-
-    .ob-tag {
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--primary);
-      margin-bottom: 10px;
-    }
-    .ob-title {
-      font-size: 1.65rem;
-      font-weight: 800;
-      line-height: 1.25;
-      margin-bottom: 8px;
-    }
-    .ob-sub {
-      font-size: 0.88rem;
-      color: var(--gray);
-      line-height: 1.55;
-      margin-bottom: 28px;
-    }
-
-    .skin-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: auto;
-    }
-    .skin-card {
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 16px 14px;
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-      background: var(--white);
-      text-align: left;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .skin-card:last-child { grid-column: 1 / -1; }
-    .skin-card.sel { border-color: var(--primary); background: var(--primary-light); }
-    .skin-card .sc-emoji { font-size: 1.6rem; margin-bottom: 8px; display: block; }
-    .skin-card .sc-name { font-size: 0.9rem; font-weight: 700; margin-bottom: 3px; }
-    .skin-card .sc-desc { font-size: 0.72rem; color: var(--gray); line-height: 1.4; }
-
-    .concern-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: auto;
-    }
-    .concern-chip {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 16px;
-      border-radius: 100px;
-      border: 2px solid var(--border);
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      background: var(--white);
-      transition: all 0.15s;
-      font-family: var(--font);
-      -webkit-tap-highlight-color: transparent;
-    }
-    .concern-chip.sel { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
-
-    .ob-footer { padding-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+    #view-onboard{background:var(--white);}
+    .ob-progress{display:flex;gap:6px;padding:20px 24px 0;}
+    .ob-bar{height:4px;flex:1;border-radius:2px;background:var(--border);transition:background .3s;}
+    .ob-bar.done{background:var(--primary);}
+    .ob-content{flex:1;display:flex;flex-direction:column;padding:32px 24px 28px;}
+    .ob-tag{font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);margin-bottom:10px;}
+    .ob-title{font-size:1.65rem;font-weight:800;line-height:1.25;margin-bottom:8px;}
+    .ob-sub{font-size:.88rem;color:var(--gray);line-height:1.55;margin-bottom:28px;}
+    .skin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:auto;}
+    .skin-card{border:2px solid var(--border);border-radius:14px;padding:16px 14px;cursor:pointer;transition:all .15s;background:var(--white);text-align:left;-webkit-tap-highlight-color:transparent;}
+    .skin-card:last-child{grid-column:1/-1;}
+    .skin-card.sel{border-color:var(--primary);background:var(--primary-light);}
+    .sc-emoji{font-size:1.6rem;margin-bottom:8px;display:block;}
+    .sc-name{font-size:.9rem;font-weight:700;margin-bottom:3px;}
+    .sc-desc{font-size:.72rem;color:var(--gray);line-height:1.4;}
+    .concern-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:auto;}
+    .concern-chip{display:flex;align-items:center;gap:6px;padding:10px 16px;border-radius:100px;border:2px solid var(--border);font-size:.82rem;font-weight:600;cursor:pointer;background:var(--white);transition:all .15s;font-family:var(--font);-webkit-tap-highlight-color:transparent;}
+    .concern-chip.sel{border-color:var(--primary);background:var(--primary-light);color:var(--primary);}
+    .ob-footer{padding-top:20px;display:flex;flex-direction:column;gap:8px;}
 
     /* ── BUTTONS ── */
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      padding: 15px;
-      border-radius: 12px;
-      border: none;
-      font-family: var(--font);
-      font-size: 0.9rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn-primary { background: var(--primary); color: var(--white); }
-    .btn-primary:active { background: var(--primary-dark); transform: scale(0.99); }
-    .btn-primary:disabled { background: var(--border); color: var(--gray); cursor: not-allowed; transform: none; }
-    .btn-ghost { background: transparent; color: var(--gray); font-size: 0.82rem; }
+    .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border-radius:12px;border:none;font-family:var(--font);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+    .btn-primary{background:var(--primary);color:var(--white);}
+    .btn-primary:active{background:var(--primary-dark);transform:scale(.99);}
+    .btn-primary:disabled{background:var(--border);color:var(--gray);cursor:not-allowed;transform:none;}
+    .btn-ghost{background:transparent;color:var(--gray);font-size:.82rem;}
+    .icon-btn{width:36px;height:36px;border-radius:50%;background:var(--gray-light);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.05rem;-webkit-tap-highlight-color:transparent;}
 
     /* ── HOME ── */
-    #view-home { background: var(--white); }
+    #view-home{background:var(--white);}
+    .home-hd{padding:20px 20px 0;display:flex;align-items:center;justify-content:space-between;}
+    .home-logo{font-size:1.3rem;font-weight:800;letter-spacing:-.03em;}
+    .home-logo span{color:var(--primary);}
+    .home-hero{padding:24px 20px 18px;}
+    .home-eyebrow{font-size:.78rem;color:var(--gray);font-weight:500;margin-bottom:4px;}
+    .home-headline{font-size:1.45rem;font-weight:800;line-height:1.3;}
+    .profile-tag{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:5px 12px;border-radius:100px;background:var(--primary-light);color:var(--primary);font-size:.72rem;font-weight:600;}
+    .search-area{padding:0 20px;display:flex;gap:10px;align-items:center;}
+    .search-wrap{flex:1;position:relative;}
+    .search-inp{width:100%;padding:13px 46px 13px 42px;border-radius:13px;border:2px solid var(--border);font-family:var(--font);font-size:.88rem;background:var(--bg);color:var(--black);outline:none;transition:all .2s;}
+    .search-inp:focus{border-color:var(--primary);background:var(--white);}
+    .search-inp::placeholder{color:#A1A1AA;}
+    .search-icon-l{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--gray);pointer-events:none;font-size:1rem;}
+    .search-go{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:9px;background:var(--primary);border:none;color:var(--white);font-size:.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:var(--font);-webkit-tap-highlight-color:transparent;}
+    .scan-btn{width:46px;height:46px;border-radius:13px;background:var(--gray-light);border:2px solid var(--border);font-size:1.2rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
 
-    .home-header {
-      padding: 20px 20px 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .home-logo { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.03em; }
-    .home-logo span { color: var(--primary); }
+    /* home tabs */
+    .home-tabs{display:flex;gap:0;padding:16px 20px 0;border-bottom:1px solid var(--border);margin-top:16px;}
+    .h-tab{padding:8px 14px;border:none;background:transparent;font-family:var(--font);font-size:.8rem;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+    .h-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+    .tab-pane{padding:14px 20px 8px;}
+    .tab-empty{font-size:.82rem;color:var(--gray);padding:8px 0;}
 
-    .icon-btn {
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background: var(--gray-light);
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.05rem;
-      -webkit-tap-highlight-color: transparent;
-    }
+    /* history / fav cards */
+    .hist-scroll{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+    .hist-scroll::-webkit-scrollbar{display:none;}
+    .hist-card{flex-shrink:0;width:96px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+    .hist-img{width:96px;height:96px;border-radius:12px;object-fit:cover;background:var(--gray-light);display:block;margin-bottom:5px;}
+    .hist-img-ph{width:96px;height:96px;border-radius:12px;background:var(--gray-light);display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:5px;}
+    .hist-name{font-size:.7rem;font-weight:600;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:3px;}
 
-    .home-hero { padding: 28px 20px 20px; }
-    .home-eyebrow { font-size: 0.78rem; color: var(--gray); font-weight: 500; margin-bottom: 4px; }
-    .home-headline { font-size: 1.5rem; font-weight: 800; line-height: 1.3; }
-    .profile-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      margin-top: 12px;
-      padding: 5px 12px;
-      border-radius: 100px;
-      background: var(--primary-light);
-      color: var(--primary);
-      font-size: 0.72rem;
-      font-weight: 600;
-    }
+    /* sugg chips */
+    .sugg-label{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:10px;}
+    .sugg-chips{display:flex;flex-wrap:wrap;gap:7px;}
+    .sugg-chip{padding:8px 14px;border-radius:100px;background:var(--gray-light);font-size:.78rem;font-weight:600;cursor:pointer;border:none;font-family:var(--font);-webkit-tap-highlight-color:transparent;transition:all .15s;}
+    .sugg-chip:active{background:var(--primary-light);color:var(--primary);}
 
-    .search-wrap { margin: 0 20px; position: relative; }
-    .search-inp {
-      width: 100%;
-      padding: 14px 48px 14px 44px;
-      border-radius: 14px;
-      border: 2px solid var(--border);
-      font-family: var(--font);
-      font-size: 0.9rem;
-      background: var(--bg);
-      color: var(--black);
-      outline: none;
-      transition: border-color 0.2s, background 0.2s;
-    }
-    .search-inp:focus { border-color: var(--primary); background: var(--white); }
-    .search-inp::placeholder { color: #A1A1AA; }
-    .search-icon-l {
-      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-      color: var(--gray); pointer-events: none; font-size: 1.1rem;
-    }
-    .search-go {
-      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-      width: 34px; height: 34px; border-radius: 10px;
-      background: var(--primary); border: none; color: var(--white);
-      font-size: 0.95rem; font-weight: 700; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font);
-      -webkit-tap-highlight-color: transparent;
-    }
-    .search-go:active { background: var(--primary-dark); }
-
-    .home-suggestions { padding: 20px 20px 24px; }
-    .sugg-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--gray);
-      margin-bottom: 10px;
-    }
-    .sugg-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-    .sugg-chip {
-      padding: 8px 14px;
-      border-radius: 100px;
-      background: var(--gray-light);
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      font-family: var(--font);
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.15s;
-    }
-    .sugg-chip:active { background: var(--primary-light); color: var(--primary); }
+    /* ── NAV BAR ── */
+    .nav-bar{background:var(--white);padding:14px 14px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+    .back-btn{width:36px;height:36px;border-radius:10px;background:var(--gray-light);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+    .nav-inp{flex:1;padding:9px 12px;border-radius:10px;border:1.5px solid var(--border);font-family:var(--font);font-size:.88rem;background:var(--bg);outline:none;color:var(--black);}
+    .nav-inp:focus{border-color:var(--primary);background:var(--white);}
+    .nav-go{width:36px;height:36px;border-radius:10px;background:var(--primary);border:none;color:var(--white);font-size:.9rem;font-weight:700;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:var(--font);-webkit-tap-highlight-color:transparent;}
 
     /* ── RESULTS ── */
-    #view-results { background: var(--bg); }
-
-    .nav-bar {
-      background: var(--white);
-      padding: 14px 14px 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .back-btn {
-      width: 36px; height: 36px;
-      border-radius: 10px; background: var(--gray-light); border: none;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 1rem; flex-shrink: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .nav-inp {
-      flex: 1; padding: 9px 12px;
-      border-radius: 10px; border: 1.5px solid var(--border);
-      font-family: var(--font); font-size: 0.88rem;
-      background: var(--bg); outline: none; color: var(--black);
-    }
-    .nav-inp:focus { border-color: var(--primary); background: var(--white); }
-    .nav-go {
-      width: 36px; height: 36px;
-      border-radius: 10px; background: var(--primary); border: none;
-      color: var(--white); font-size: 0.9rem; font-weight: 700;
-      cursor: pointer; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font);
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    .results-meta { padding: 12px 16px 6px; font-size: 0.78rem; color: var(--gray); font-weight: 500; }
-    .results-list { padding: 4px 14px 28px; display: flex; flex-direction: column; gap: 10px; }
-
-    .product-card {
-      background: var(--white);
-      border-radius: 14px;
-      padding: 14px;
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      cursor: pointer;
-      border: 1.5px solid transparent;
-      transition: border-color 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .product-card:active { border-color: var(--primary); }
-
-    .prod-img {
-      width: 64px; height: 64px;
-      border-radius: 10px; object-fit: cover;
-      background: var(--gray-light); flex-shrink: 0;
-    }
-    .prod-img-ph {
-      width: 64px; height: 64px;
-      border-radius: 10px; background: var(--gray-light);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.7rem; flex-shrink: 0;
-    }
-    .prod-info { flex: 1; min-width: 0; }
-    .prod-brand {
-      font-size: 0.68rem; font-weight: 600; color: var(--gray);
-      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;
-    }
-    .prod-name { font-size: 0.88rem; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
-    .prod-chevron { color: var(--border); font-size: 1.1rem; flex-shrink: 0; }
+    #view-results{background:var(--bg);}
+    .results-meta{padding:12px 16px 6px;font-size:.78rem;color:var(--gray);font-weight:500;}
+    .results-list{padding:4px 14px 28px;display:flex;flex-direction:column;gap:10px;}
+    .product-card{background:var(--white);border-radius:14px;padding:14px;display:flex;gap:12px;align-items:center;cursor:pointer;border:1.5px solid transparent;transition:border-color .15s;-webkit-tap-highlight-color:transparent;}
+    .product-card:active{border-color:var(--primary);}
+    .prod-img{width:64px;height:64px;border-radius:10px;object-fit:cover;background:var(--gray-light);flex-shrink:0;}
+    .prod-img-ph{width:64px;height:64px;border-radius:10px;background:var(--gray-light);display:flex;align-items:center;justify-content:center;font-size:1.7rem;flex-shrink:0;}
+    .prod-info{flex:1;min-width:0;}
+    .prod-brand{font-size:.68rem;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+    .prod-name{font-size:.88rem;font-weight:700;line-height:1.3;margin-bottom:6px;}
+    .prod-chevron{color:var(--border);font-size:1.1rem;flex-shrink:0;}
 
     /* grade badge */
-    .gbadge {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 9px; border-radius: 100px;
-      font-size: 0.7rem; font-weight: 700;
-    }
-    .g-A { background: var(--success-bg); color: var(--success); }
-    .g-B { background: var(--info-bg); color: var(--info); }
-    .g-C { background: var(--warning-bg); color: var(--warning); }
-    .g-D { background: var(--danger-bg); color: var(--danger); }
-    .g-x { background: var(--gray-light); color: var(--gray); }
+    .gbadge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:100px;font-size:.7rem;font-weight:700;}
+    .g-A{background:var(--success-bg);color:var(--success);}
+    .g-B{background:var(--info-bg);color:var(--info);}
+    .g-C{background:var(--warning-bg);color:var(--warning);}
+    .g-D{background:var(--danger-bg);color:var(--danger);}
+    .g-x{background:var(--gray-light);color:var(--gray);}
 
     /* state boxes */
-    .state-box {
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 52px 24px; text-align: center; gap: 10px;
-    }
-    .state-emoji { font-size: 2.4rem; }
-    .state-title { font-size: 1rem; font-weight: 700; }
-    .state-sub { font-size: 0.82rem; color: var(--gray); line-height: 1.5; }
-    .spinner {
-      width: 28px; height: 28px;
-      border: 3px solid var(--border); border-top-color: var(--primary);
-      border-radius: 50%; animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .state-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:52px 24px;text-align:center;gap:10px;}
+    .state-emoji{font-size:2.4rem;}
+    .state-title{font-size:1rem;font-weight:700;}
+    .state-sub{font-size:.82rem;color:var(--gray);line-height:1.5;}
+    .spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
 
     /* ── PRODUCT DETAIL ── */
-    #view-product { background: var(--bg); }
+    #view-product{background:var(--bg);}
+    .product-hero{background:var(--white);padding:20px;display:flex;gap:14px;align-items:flex-start;border-bottom:1px solid var(--border);}
+    .hero-img{width:80px;height:80px;border-radius:12px;object-fit:cover;background:var(--gray-light);flex-shrink:0;}
+    .hero-img-ph{width:80px;height:80px;border-radius:12px;background:var(--gray-light);display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;}
+    .hero-info{flex:1;}
+    .hero-brand{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:4px;}
+    .hero-name{font-size:1rem;font-weight:800;line-height:1.3;margin-bottom:10px;}
+    .section{background:var(--white);margin:10px 0;padding:16px 18px;}
+    .sec-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--gray);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+    .sec-count{background:var(--gray-light);color:var(--gray);font-size:.65rem;padding:2px 7px;border-radius:100px;font-weight:600;}
+    .score-row{display:flex;justify-content:space-between;font-size:.72rem;color:var(--gray);font-weight:500;margin-bottom:6px;}
+    .score-track{height:7px;border-radius:4px;background:var(--border);overflow:hidden;}
+    .score-fill{height:100%;border-radius:4px;transition:width .7s ease;}
+    .sf-hi{background:var(--success);} .sf-md{background:#F59E0B;} .sf-lo{background:var(--danger);}
+    .flag-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px solid var(--border);}
+    .flag-item:first-child{border-top:none;padding-top:0;}
+    .flag-ic{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.82rem;flex-shrink:0;}
+    .fi-hi{background:var(--danger-bg);} .fi-md{background:var(--warning-bg);} .fi-lo{background:var(--gray-light);}
+    .flag-name{font-size:.85rem;font-weight:700;text-transform:capitalize;margin-bottom:2px;}
+    .flag-sub{font-size:.7rem;color:var(--gray);}
+    .benefit-chips{display:flex;flex-wrap:wrap;gap:6px;}
+    .benefit-chip{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:100px;background:var(--success-bg);color:var(--success);font-size:.76rem;font-weight:600;}
+    .buy-link{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border);text-decoration:none;color:var(--black);-webkit-tap-highlight-color:transparent;}
+    .buy-link:first-child{border-top:none;padding-top:0;}
+    .buy-ic{width:36px;height:36px;border-radius:10px;background:var(--gray-light);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+    .buy-name{font-size:.88rem;font-weight:700;flex:1;}
+    .buy-arrow{color:var(--gray);font-size:.9rem;}
+    .ing-toggle{font-size:.8rem;font-weight:600;color:var(--primary);background:none;border:none;padding:0;cursor:pointer;font-family:var(--font);margin-bottom:8px;display:block;}
+    .ing-text{font-size:.76rem;color:var(--gray);line-height:1.75;display:none;}
+    .ing-text.open{display:block;}
+    .empty-note{font-size:.82rem;color:var(--gray);font-style:italic;}
 
-    .product-hero {
-      background: var(--white);
-      padding: 20px;
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      border-bottom: 1px solid var(--border);
-    }
-    .hero-img {
-      width: 80px; height: 80px;
-      border-radius: 12px; object-fit: cover;
-      background: var(--gray-light); flex-shrink: 0;
-    }
-    .hero-img-ph {
-      width: 80px; height: 80px;
-      border-radius: 12px; background: var(--gray-light);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 2rem; flex-shrink: 0;
-    }
-    .hero-info { flex: 1; }
-    .hero-brand {
-      font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.06em; color: var(--gray); margin-bottom: 4px;
-    }
-    .hero-name { font-size: 1rem; font-weight: 800; line-height: 1.3; margin-bottom: 10px; }
+    /* ── SCAN ── */
+    #view-scan{background:#000;position:relative;overflow:hidden;min-height:100dvh;}
+    #scan-vid{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
+    .scan-back-btn{position:absolute;top:20px;left:16px;z-index:20;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.45);border:1.5px solid rgba(255,255,255,.3);color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
+    .scan-overlay{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:200px;pointer-events:none;}
+    .scan-finder{width:280px;height:165px;border-radius:14px;position:relative;box-shadow:0 0 0 4000px rgba(0,0,0,.55);overflow:hidden;}
+    .scan-corners{position:absolute;inset:0;}
+    .scan-corners::before,.scan-corners::after{content:'';position:absolute;width:26px;height:26px;border-color:var(--primary);border-style:solid;}
+    .scan-corners::before{top:-2px;left:-2px;border-width:4px 0 0 4px;border-radius:4px 0 0 0;}
+    .scan-corners::after{bottom:-2px;right:-2px;border-width:0 4px 4px 0;border-radius:0 0 4px 0;}
+    .scan-line{position:absolute;width:90%;left:5%;height:2px;background:linear-gradient(90deg,transparent,var(--primary),transparent);animation:scanLine 2s ease-in-out infinite;}
+    @keyframes scanLine{0%,100%{top:10%}50%{top:80%}}
+    .scan-hint{color:rgba(255,255,255,.85);font-size:.85rem;font-weight:500;margin-top:18px;text-align:center;}
+    .scan-controls{position:absolute;bottom:0;left:0;right:0;z-index:20;padding:20px 24px 44px;display:flex;flex-direction:column;gap:10px;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,transparent 100%);}
+    .scan-manual-row{display:flex;gap:8px;}
+    .scan-inp{flex:1;padding:11px 14px;border-radius:10px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font-family:var(--font);font-size:.88rem;outline:none;}
+    .scan-inp::placeholder{color:rgba(255,255,255,.4);}
+    .scan-inp-go{width:42px;height:42px;border-radius:10px;background:var(--primary);border:none;color:#fff;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .scan-cancel-btn{padding:12px;border-radius:12px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);color:#fff;font-family:var(--font);font-size:.88rem;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+    .scan-status{color:#fff;font-size:.8rem;text-align:center;font-weight:500;opacity:.8;}
+    #scan-unsupported{display:none;position:absolute;inset:0;z-index:30;background:var(--white);flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;gap:12px;text-align:center;}
 
-    .section {
-      background: var(--white);
-      margin: 10px 0;
-      padding: 16px 18px;
-    }
-    .section:first-of-type { margin-top: 10px; }
+    /* ── COMPARE ── */
+    #view-compare{background:var(--bg);}
+    .cmp-cards-row{display:flex;align-items:flex-start;padding:16px 14px;gap:8px;background:var(--white);border-bottom:1px solid var(--border);}
+    .cmp-pcard{flex:1;text-align:center;}
+    .cmp-pimg{width:72px;height:72px;border-radius:10px;object-fit:cover;background:var(--gray-light);display:block;margin:0 auto 6px;}
+    .cmp-pimg-ph{width:72px;height:72px;border-radius:10px;background:var(--gray-light);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 6px;}
+    .cmp-pname{font-size:.72rem;font-weight:700;line-height:1.3;margin-bottom:4px;}
+    .cmp-vs-col{font-size:.9rem;font-weight:900;color:var(--gray);padding-top:24px;flex-shrink:0;}
+    .cmp-empty-slot{flex:1;height:100px;border:2px dashed var(--border);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:4px;-webkit-tap-highlight-color:transparent;}
+    .cmp-empty-slot span{font-size:.72rem;color:var(--gray);font-weight:600;}
+    .cmp-remove-btn{background:none;border:none;font-family:var(--font);font-size:.65rem;color:var(--gray);cursor:pointer;margin-top:5px;padding:2px 6px;border-radius:4px;}
+    .cmp-winner{background:var(--success-bg);color:var(--success);padding:10px 16px;font-size:.82rem;font-weight:700;}
+    .cmp-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;}
+    .cmp-col-head{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray);margin-bottom:6px;}
+    .cmp-row{font-size:.78rem;padding:2px 0;line-height:1.5;}
+    .cmp-bad{color:var(--danger);}
+    .cmp-good{color:var(--success);}
+    .cmp-shared{background:var(--gray-light);border-radius:8px;padding:8px 12px;font-size:.78rem;line-height:1.5;margin-bottom:8px;}
+    .cmp-shared strong{font-weight:700;color:var(--gray);}
 
-    .sec-title {
-      font-size: 0.72rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.09em;
-      color: var(--gray); margin-bottom: 12px;
-      display: flex; align-items: center; gap: 6px;
-    }
-    .sec-count {
-      background: var(--gray-light); color: var(--gray);
-      font-size: 0.65rem; padding: 2px 7px;
-      border-radius: 100px; font-weight: 600;
-    }
-
-    /* score bar */
-    .score-row {
-      display: flex; justify-content: space-between;
-      font-size: 0.72rem; color: var(--gray); font-weight: 500;
-      margin-bottom: 6px;
-    }
-    .score-track {
-      height: 7px; border-radius: 4px;
-      background: var(--border); overflow: hidden;
-    }
-    .score-fill { height: 100%; border-radius: 4px; transition: width 0.7s ease; }
-    .sf-hi { background: var(--success); }
-    .sf-md { background: #F59E0B; }
-    .sf-lo { background: var(--danger); }
-
-    /* flags */
-    .flag-item {
-      display: flex; align-items: flex-start; gap: 10px;
-      padding: 10px 0; border-top: 1px solid var(--border);
-    }
-    .flag-item:first-child { border-top: none; padding-top: 0; }
-    .flag-ic {
-      width: 28px; height: 28px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.82rem; flex-shrink: 0;
-    }
-    .fi-hi { background: var(--danger-bg); }
-    .fi-md { background: var(--warning-bg); }
-    .fi-lo { background: var(--gray-light); }
-    .flag-name { font-size: 0.85rem; font-weight: 700; text-transform: capitalize; margin-bottom: 2px; }
-    .flag-sub { font-size: 0.7rem; color: var(--gray); }
-
-    /* benefits */
-    .benefit-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .benefit-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 6px 12px; border-radius: 100px;
-      background: var(--success-bg); color: var(--success);
-      font-size: 0.76rem; font-weight: 600;
-    }
-
-    /* buy links */
-    .buy-link {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 0; border-top: 1px solid var(--border);
-      text-decoration: none; color: var(--black);
-      -webkit-tap-highlight-color: transparent;
-    }
-    .buy-link:first-child { border-top: none; padding-top: 0; }
-    .buy-ic {
-      width: 36px; height: 36px; border-radius: 10px;
-      background: var(--gray-light);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem; flex-shrink: 0;
-    }
-    .buy-name { font-size: 0.88rem; font-weight: 700; flex: 1; }
-    .buy-arrow { color: var(--gray); font-size: 0.9rem; }
-
-    /* ingredients toggle */
-    .ing-toggle {
-      font-size: 0.8rem; font-weight: 600; color: var(--primary);
-      background: none; border: none; padding: 0; cursor: pointer;
-      font-family: var(--font); margin-bottom: 8px; display: block;
-    }
-    .ing-text {
-      font-size: 0.76rem; color: var(--gray); line-height: 1.75;
-      display: none;
-    }
-    .ing-text.open { display: block; }
-
-    .empty-note { font-size: 0.82rem; color: var(--gray); font-style: italic; }
+    /* Compare FAB */
+    .cmp-fab{position:fixed;bottom:24px;right:16px;z-index:500;display:none;}
+    .cmp-fab-btn{background:var(--black);color:#fff;border:none;border-radius:100px;padding:12px 18px;font-family:var(--font);font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.25);display:flex;align-items:center;gap:7px;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
 
     /* toast */
-    .toast {
-      position: fixed; bottom: 28px; left: 50%;
-      transform: translateX(-50%) translateY(16px);
-      background: var(--black); color: var(--white);
-      padding: 10px 20px; border-radius: 100px;
-      font-size: 0.8rem; font-weight: 600; white-space: nowrap;
-      opacity: 0; pointer-events: none;
-      transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
-      z-index: 9999;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--black);color:#fff;padding:10px 20px;border-radius:100px;font-size:.8rem;font-weight:600;white-space:nowrap;opacity:0;pointer-events:none;transition:all .28s cubic-bezier(.34,1.56,.64,1);z-index:9999;}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   </style>
 </head>
 <body>
@@ -502,52 +220,28 @@
 <!-- ══ ONBOARDING ══ -->
 <div id="view-onboard" class="view active">
   <div class="ob-progress">
-    <div class="ob-prog-bar" id="ob-p1"></div>
-    <div class="ob-prog-bar" id="ob-p2"></div>
+    <div class="ob-bar" id="ob-p1"></div>
+    <div class="ob-bar" id="ob-p2"></div>
   </div>
-
-  <!-- Step 1: Skin Type -->
   <div class="ob-content" id="ob-s1">
     <div class="ob-tag">Step 1 of 2</div>
     <h1 class="ob-title">What's your skin type?</h1>
-    <p class="ob-sub">We'll flag ingredients that don't work for you and highlight ones that do.</p>
-    <div class="skin-grid" id="skin-grid">
-      <div class="skin-card" data-t="oily">
-        <span class="sc-emoji">✨</span>
-        <div class="sc-name">Oily</div>
-        <div class="sc-desc">Shiny, large pores, breakout-prone</div>
-      </div>
-      <div class="skin-card" data-t="dry">
-        <span class="sc-emoji">🌵</span>
-        <div class="sc-name">Dry</div>
-        <div class="sc-desc">Tight, flaky, rough texture</div>
-      </div>
-      <div class="skin-card" data-t="combination">
-        <span class="sc-emoji">☯️</span>
-        <div class="sc-name">Combination</div>
-        <div class="sc-desc">Oily T-zone, dry or normal cheeks</div>
-      </div>
-      <div class="skin-card" data-t="sensitive">
-        <span class="sc-emoji">🌸</span>
-        <div class="sc-name">Sensitive</div>
-        <div class="sc-desc">Easily irritated, reactive to products</div>
-      </div>
-      <div class="skin-card" data-t="normal">
-        <span class="sc-emoji">🍃</span>
-        <div class="sc-name">Normal</div>
-        <div class="sc-desc">Balanced, minimal concerns</div>
-      </div>
+    <p class="ob-sub">We'll flag harmful ingredients and highlight ones that benefit you.</p>
+    <div class="skin-grid">
+      <div class="skin-card" data-t="oily"><span class="sc-emoji">✨</span><div class="sc-name">Oily</div><div class="sc-desc">Shiny, large pores, breakout-prone</div></div>
+      <div class="skin-card" data-t="dry"><span class="sc-emoji">🌵</span><div class="sc-name">Dry</div><div class="sc-desc">Tight, flaky, rough texture</div></div>
+      <div class="skin-card" data-t="combination"><span class="sc-emoji">☯️</span><div class="sc-name">Combination</div><div class="sc-desc">Oily T-zone, dry cheeks</div></div>
+      <div class="skin-card" data-t="sensitive"><span class="sc-emoji">🌸</span><div class="sc-name">Sensitive</div><div class="sc-desc">Easily irritated, reactive</div></div>
+      <div class="skin-card" data-t="normal"><span class="sc-emoji">🍃</span><div class="sc-name">Normal</div><div class="sc-desc">Balanced, minimal concerns</div></div>
     </div>
     <div class="ob-footer">
       <button class="btn btn-primary" id="ob-next" disabled>Continue →</button>
     </div>
   </div>
-
-  <!-- Step 2: Concerns -->
   <div class="ob-content" id="ob-s2" style="display:none;">
     <div class="ob-tag">Step 2 of 2</div>
     <h1 class="ob-title">Any skin concerns?</h1>
-    <p class="ob-sub">Select all that apply — we'll personalize your ingredient analysis.</p>
+    <p class="ob-sub">Select all that apply.</p>
     <div class="concern-wrap">
       <button class="concern-chip" data-c="acne">🔴 Acne &amp; Breakouts</button>
       <button class="concern-chip" data-c="dry">💧 Dryness</button>
@@ -565,32 +259,41 @@
 
 <!-- ══ HOME ══ -->
 <div id="view-home" class="view">
-  <div class="home-header">
+  <div class="home-hd">
     <div class="home-logo">skin<span>ly</span></div>
-    <button class="icon-btn" id="profile-btn" title="Edit profile">👤</button>
+    <button class="icon-btn" id="profile-btn">👤</button>
   </div>
   <div class="home-hero">
     <div class="home-eyebrow">Personalized for you</div>
     <h1 class="home-headline">Find products<br/>made for your skin</h1>
     <div class="profile-tag" id="profile-tag">Loading...</div>
   </div>
-  <div class="search-wrap">
-    <span class="search-icon-l">🔍</span>
-    <input class="search-inp" id="home-inp" type="text"
-      placeholder="Product name or brand..."
-      autocomplete="off" autocorrect="off" spellcheck="false"/>
-    <button class="search-go" id="home-go">→</button>
+  <div class="search-area">
+    <div class="search-wrap">
+      <span class="search-icon-l">🔍</span>
+      <input class="search-inp" id="home-inp" type="text" placeholder="Product name or brand..." autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button class="search-go" id="home-go">→</button>
+    </div>
+    <button class="scan-btn" id="scan-open" title="Scan barcode">📷</button>
   </div>
-  <div class="home-suggestions">
-    <div class="sugg-label">Popular searches</div>
+  <div class="home-tabs">
+    <button class="h-tab active" data-t="recent">🕐 Recent</button>
+    <button class="h-tab" data-t="saved">❤️ Saved</button>
+    <button class="h-tab" data-t="search">🔥 Popular</button>
+  </div>
+  <div id="tab-recent" class="tab-pane"></div>
+  <div id="tab-saved" class="tab-pane" style="display:none;"></div>
+  <div id="tab-search" class="tab-pane" style="display:none;">
+    <div class="sugg-label" style="margin-bottom:10px;">Try searching</div>
     <div class="sugg-chips">
       <button class="sugg-chip" data-q="CeraVe moisturizer">CeraVe</button>
       <button class="sugg-chip" data-q="The Ordinary niacinamide">The Ordinary</button>
       <button class="sugg-chip" data-q="La Roche-Posay sunscreen">La Roche-Posay</button>
       <button class="sugg-chip" data-q="COSRX snail mucin">COSRX</button>
       <button class="sugg-chip" data-q="Neutrogena hydro boost">Neutrogena</button>
-      <button class="sugg-chip" data-q="Innisfree green tea serum">Innisfree</button>
+      <button class="sugg-chip" data-q="Innisfree green tea">Innisfree</button>
       <button class="sugg-chip" data-q="Laneige water sleeping mask">Laneige</button>
+      <button class="sugg-chip" data-q="Sulwhasoo first care">Sulwhasoo</button>
     </div>
   </div>
 </div>
@@ -610,146 +313,204 @@
 <div id="view-product" class="view">
   <div class="nav-bar">
     <button class="back-btn" id="prod-back">←</button>
-    <div id="prod-nav-title" style="flex:1;font-size:0.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+    <div id="prod-nav-title" style="flex:1;font-size:.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+    <button class="icon-btn" id="prod-fav-btn" title="Save">🤍</button>
+    <button class="icon-btn" id="prod-cmp-btn" title="Compare" style="font-size:.85rem;font-weight:800;">⊞</button>
   </div>
   <div id="prod-content"></div>
+</div>
+
+<!-- ══ SCAN ══ -->
+<div id="view-scan" class="view">
+  <video id="scan-vid" autoplay playsinline muted></video>
+  <button class="scan-back-btn" id="scan-back">←</button>
+  <div class="scan-overlay">
+    <div class="scan-finder">
+      <div class="scan-corners"></div>
+      <div class="scan-line"></div>
+    </div>
+    <p class="scan-hint" id="scan-hint">Point camera at a barcode</p>
+  </div>
+  <div class="scan-controls">
+    <div class="scan-status" id="scan-status"></div>
+    <div class="scan-manual-row">
+      <input class="scan-inp" id="scan-inp" type="tel" placeholder="Or type barcode number (EAN-13)..."/>
+      <button class="scan-inp-go" id="scan-inp-go">→</button>
+    </div>
+    <button class="scan-cancel-btn" id="scan-cancel">Cancel</button>
+  </div>
+  <div id="scan-unsupported">
+    <div style="font-size:2.4rem;">📷</div>
+    <div style="font-size:1rem;font-weight:800;">Camera scan not supported</div>
+    <p style="font-size:.85rem;color:var(--gray);line-height:1.6;">Your browser doesn't support barcode detection.<br/>Try Chrome on Android, or type the barcode number below.</p>
+    <input class="nav-inp" id="scan-fb-inp" type="tel" placeholder="Type barcode number..." style="margin-top:8px;width:100%;"/>
+    <button class="btn btn-primary" id="scan-fb-go" style="margin-top:8px;">Search →</button>
+    <button class="btn btn-ghost" id="scan-fb-cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- ══ COMPARE ══ -->
+<div id="view-compare" class="view">
+  <div class="nav-bar">
+    <button class="back-btn" id="cmp-back">←</button>
+    <div style="flex:1;font-size:.9rem;font-weight:800;">Compare Products</div>
+    <button class="icon-btn" id="cmp-clear" title="Clear all" style="font-size:.8rem;">✕</button>
+  </div>
+  <div id="cmp-content"></div>
+</div>
+
+<!-- Compare FAB -->
+<div class="cmp-fab" id="cmp-fab">
+  <button class="cmp-fab-btn" id="cmp-fab-btn">⊞ Compare · <span id="cmp-count">0</span></button>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── PROFILE ──
-const PKEY = 'skinly-profile-v1';
+// ══ CONFIG ══
+const PKEY   = 'skinly-profile-v1';
+const HKEY   = 'skinly-hist-v1';
+const FAVKEY = 'skinly-favs-v1';
+
+// ══ STATE ══
 let profile = null;
 try { profile = JSON.parse(localStorage.getItem(PKEY)); } catch {}
+let prodBackView = 'view-results';
+let currentProdId = null;
+let compareList = []; // up to 2 product codes
+let scanActive = false;
+let scanStream = null;
 
-// ── INGREDIENT DB ──
-// flag: 'comedogenic' | 'irritant' | 'allergen' | 'beneficial'
-// severity: 1-5 (for hazardous flags)
-// bad_for / good_for: skin types and concerns
+// ══ INGREDIENT DB ══
 const DB = {
-  // Comedogenic
-  'isopropyl myristate':       { flag:'comedogenic', severity:5, bad_for:['acne','oily'] },
-  'isopropyl palmitate':       { flag:'comedogenic', severity:4, bad_for:['acne','oily'] },
-  'myristyl myristate':        { flag:'comedogenic', severity:5, bad_for:['acne'] },
-  'isopropyl isostearate':     { flag:'comedogenic', severity:4, bad_for:['acne','oily'] },
-  'butyl stearate':            { flag:'comedogenic', severity:3, bad_for:['acne'] },
-  'wheat germ oil':            { flag:'comedogenic', severity:5, bad_for:['acne'] },
-  'acetylated lanolin':        { flag:'comedogenic', severity:4, bad_for:['acne'] },
-  'cocoa butter':              { flag:'comedogenic', severity:4, bad_for:['acne'] },
-  'coconut oil':               { flag:'comedogenic', severity:4, bad_for:['acne','oily'] },
-  'flaxseed oil':              { flag:'comedogenic', severity:4, bad_for:['acne'] },
-  'linseed oil':               { flag:'comedogenic', severity:4, bad_for:['acne'] },
-  'soybean oil':               { flag:'comedogenic', severity:3, bad_for:['acne'] },
-  'sesame oil':                { flag:'comedogenic', severity:3, bad_for:['acne'] },
-  'cetyl acetate':             { flag:'comedogenic', severity:3, bad_for:['acne'] },
-  // Irritants
-  'fragrance':                 { flag:'irritant', severity:4, bad_for:['sensitive','redness'] },
-  'parfum':                    { flag:'irritant', severity:4, bad_for:['sensitive','redness'] },
-  'alcohol denat':             { flag:'irritant', severity:4, bad_for:['sensitive','dry'] },
-  'denatured alcohol':         { flag:'irritant', severity:4, bad_for:['sensitive','dry'] },
-  'sd alcohol':                { flag:'irritant', severity:3, bad_for:['sensitive','dry'] },
-  'sodium lauryl sulfate':     { flag:'irritant', severity:4, bad_for:['sensitive','dry'] },
-  'sodium laureth sulfate':    { flag:'irritant', severity:2, bad_for:['sensitive'] },
-  'methylisothiazolinone':     { flag:'irritant', severity:5, bad_for:['sensitive','redness'] },
-  'methylchloroisothiazolinone': { flag:'irritant', severity:5, bad_for:['sensitive'] },
-  'dmdm hydantoin':            { flag:'irritant', severity:3, bad_for:['sensitive'], note:'Formaldehyde releaser' },
-  'imidazolidinyl urea':       { flag:'irritant', severity:3, bad_for:['sensitive'], note:'Formaldehyde releaser' },
-  'diazolidinyl urea':         { flag:'irritant', severity:3, bad_for:['sensitive'], note:'Formaldehyde releaser' },
-  'benzalkonium chloride':     { flag:'irritant', severity:3, bad_for:['sensitive','dry'] },
-  // Allergens (EU 26)
-  'limonene':                  { flag:'allergen', severity:3, bad_for:['sensitive','redness'] },
-  'linalool':                  { flag:'allergen', severity:3, bad_for:['sensitive','redness'] },
-  'citronellol':               { flag:'allergen', severity:2, bad_for:['sensitive'] },
-  'eugenol':                   { flag:'allergen', severity:3, bad_for:['sensitive'] },
-  'geraniol':                  { flag:'allergen', severity:2, bad_for:['sensitive'] },
-  'cinnamyl alcohol':          { flag:'allergen', severity:3, bad_for:['sensitive'] },
-  'benzyl benzoate':           { flag:'allergen', severity:2, bad_for:['sensitive'] },
-  'isoeugenol':                { flag:'allergen', severity:3, bad_for:['sensitive'] },
-  'hydroxycitronellal':        { flag:'allergen', severity:2, bad_for:['sensitive'] },
-  'amyl cinnamal':             { flag:'allergen', severity:3, bad_for:['sensitive'] },
-  // Beneficial
-  'hyaluronic acid':           { flag:'beneficial', good_for:['dry','all'] },
-  'sodium hyaluronate':        { flag:'beneficial', good_for:['dry','all'] },
-  'glycerin':                  { flag:'beneficial', good_for:['dry','all'] },
-  'glycerol':                  { flag:'beneficial', good_for:['dry','all'] },
-  'niacinamide':               { flag:'beneficial', good_for:['acne','oily','hyperpigmentation','redness'] },
-  'retinol':                   { flag:'beneficial', good_for:['aging','acne'] },
-  'retinal':                   { flag:'beneficial', good_for:['aging','acne'] },
-  'retinaldehyde':             { flag:'beneficial', good_for:['aging','acne'] },
-  'ascorbic acid':             { flag:'beneficial', good_for:['hyperpigmentation','aging'] },
-  'l-ascorbic acid':           { flag:'beneficial', good_for:['hyperpigmentation','aging'] },
-  'vitamin c':                 { flag:'beneficial', good_for:['hyperpigmentation','aging'] },
-  'ceramide':                  { flag:'beneficial', good_for:['dry','sensitive'] },
-  'ceramide np':               { flag:'beneficial', good_for:['dry','sensitive'] },
-  'ceramide ap':               { flag:'beneficial', good_for:['dry','sensitive'] },
-  'ceramide eop':              { flag:'beneficial', good_for:['dry','sensitive'] },
-  'centella asiatica':         { flag:'beneficial', good_for:['sensitive','acne','redness'] },
-  'centella asiatica extract': { flag:'beneficial', good_for:['sensitive','acne','redness'] },
-  'madecassoside':             { flag:'beneficial', good_for:['sensitive','redness'] },
-  'asiaticoside':              { flag:'beneficial', good_for:['sensitive','redness'] },
-  'aloe vera':                 { flag:'beneficial', good_for:['sensitive','dry','redness'] },
-  'aloe barbadensis':          { flag:'beneficial', good_for:['sensitive','dry','redness'] },
-  'salicylic acid':            { flag:'beneficial', good_for:['acne','oily'] },
-  'zinc oxide':                { flag:'beneficial', good_for:['acne','sensitive'] },
-  'allantoin':                 { flag:'beneficial', good_for:['sensitive','dry'] },
-  'panthenol':                 { flag:'beneficial', good_for:['dry','sensitive'] },
-  'squalane':                  { flag:'beneficial', good_for:['dry','all'] },
-  'shea butter':               { flag:'beneficial', good_for:['dry'] },
-  'butyrospermum parkii':      { flag:'beneficial', good_for:['dry'] },
-  'adenosine':                 { flag:'beneficial', good_for:['aging'] },
-  'ubiquinone':                { flag:'beneficial', good_for:['aging'] },
-  'coenzyme q10':              { flag:'beneficial', good_for:['aging'] },
-  'palmitoyl tripeptide':      { flag:'beneficial', good_for:['aging'] },
-  'palmitoyl pentapeptide':    { flag:'beneficial', good_for:['aging'] },
-  'alpha arbutin':             { flag:'beneficial', good_for:['hyperpigmentation'] },
-  'kojic acid':                { flag:'beneficial', good_for:['hyperpigmentation'] },
-  'tranexamic acid':           { flag:'beneficial', good_for:['hyperpigmentation'] },
-  'azelaic acid':              { flag:'beneficial', good_for:['acne','hyperpigmentation','redness'] },
-  'avena sativa':              { flag:'beneficial', good_for:['sensitive','dry'] },
-  'camellia sinensis':         { flag:'beneficial', good_for:['oily','aging','sensitive'] },
-  'bakuchiol':                 { flag:'beneficial', good_for:['aging','sensitive'] },
-  'ferulic acid':              { flag:'beneficial', good_for:['aging','hyperpigmentation'] },
-  'resveratrol':               { flag:'beneficial', good_for:['aging'] },
-  'tocopherol':                { flag:'beneficial', good_for:['dry','aging','all'] },
-  'jojoba':                    { flag:'beneficial', good_for:['acne','oily','dry'] },
-  'simmondsia chinensis':      { flag:'beneficial', good_for:['acne','dry'] },
-  'rosehip':                   { flag:'beneficial', good_for:['aging','hyperpigmentation'] },
-  'rosa canina':               { flag:'beneficial', good_for:['aging','hyperpigmentation'] },
-  'snail secretion filtrate':  { flag:'beneficial', good_for:['acne','aging','dry'] },
-  'propolis':                  { flag:'beneficial', good_for:['acne','sensitive'] },
-  'beta-glucan':               { flag:'beneficial', good_for:['dry','sensitive','aging'] },
-  'beta glucan':               { flag:'beneficial', good_for:['dry','sensitive','aging'] },
-  'lactic acid':               { flag:'beneficial', good_for:['dry','hyperpigmentation'] },
-  'glycolic acid':             { flag:'beneficial', good_for:['hyperpigmentation','aging','acne'] },
-  'mandelic acid':             { flag:'beneficial', good_for:['acne','hyperpigmentation','sensitive'] },
-  'neem':                      { flag:'beneficial', good_for:['acne'] },
-  'melia azadirachta':         { flag:'beneficial', good_for:['acne'] },
+  'isopropyl myristate':       {flag:'comedogenic',severity:5,bad_for:['acne','oily']},
+  'isopropyl palmitate':       {flag:'comedogenic',severity:4,bad_for:['acne','oily']},
+  'myristyl myristate':        {flag:'comedogenic',severity:5,bad_for:['acne']},
+  'isopropyl isostearate':     {flag:'comedogenic',severity:4,bad_for:['acne','oily']},
+  'butyl stearate':            {flag:'comedogenic',severity:3,bad_for:['acne']},
+  'wheat germ oil':            {flag:'comedogenic',severity:5,bad_for:['acne']},
+  'acetylated lanolin':        {flag:'comedogenic',severity:4,bad_for:['acne']},
+  'cocoa butter':              {flag:'comedogenic',severity:4,bad_for:['acne']},
+  'coconut oil':               {flag:'comedogenic',severity:4,bad_for:['acne','oily']},
+  'flaxseed oil':              {flag:'comedogenic',severity:4,bad_for:['acne']},
+  'linseed oil':               {flag:'comedogenic',severity:4,bad_for:['acne']},
+  'soybean oil':               {flag:'comedogenic',severity:3,bad_for:['acne']},
+  'sesame oil':                {flag:'comedogenic',severity:3,bad_for:['acne']},
+  'fragrance':                 {flag:'irritant',severity:4,bad_for:['sensitive','redness']},
+  'parfum':                    {flag:'irritant',severity:4,bad_for:['sensitive','redness']},
+  'alcohol denat':             {flag:'irritant',severity:4,bad_for:['sensitive','dry']},
+  'denatured alcohol':         {flag:'irritant',severity:4,bad_for:['sensitive','dry']},
+  'sd alcohol':                {flag:'irritant',severity:3,bad_for:['sensitive','dry']},
+  'sodium lauryl sulfate':     {flag:'irritant',severity:4,bad_for:['sensitive','dry']},
+  'sodium laureth sulfate':    {flag:'irritant',severity:2,bad_for:['sensitive']},
+  'methylisothiazolinone':     {flag:'irritant',severity:5,bad_for:['sensitive','redness']},
+  'methylchloroisothiazolinone':{flag:'irritant',severity:5,bad_for:['sensitive']},
+  'dmdm hydantoin':            {flag:'irritant',severity:3,bad_for:['sensitive'],note:'Formaldehyde releaser'},
+  'imidazolidinyl urea':       {flag:'irritant',severity:3,bad_for:['sensitive'],note:'Formaldehyde releaser'},
+  'diazolidinyl urea':         {flag:'irritant',severity:3,bad_for:['sensitive'],note:'Formaldehyde releaser'},
+  'limonene':                  {flag:'allergen',severity:3,bad_for:['sensitive','redness']},
+  'linalool':                  {flag:'allergen',severity:3,bad_for:['sensitive','redness']},
+  'citronellol':               {flag:'allergen',severity:2,bad_for:['sensitive']},
+  'eugenol':                   {flag:'allergen',severity:3,bad_for:['sensitive']},
+  'geraniol':                  {flag:'allergen',severity:2,bad_for:['sensitive']},
+  'cinnamyl alcohol':          {flag:'allergen',severity:3,bad_for:['sensitive']},
+  'benzyl benzoate':           {flag:'allergen',severity:2,bad_for:['sensitive']},
+  'isoeugenol':                {flag:'allergen',severity:3,bad_for:['sensitive']},
+  'hyaluronic acid':           {flag:'beneficial',good_for:['dry','all']},
+  'sodium hyaluronate':        {flag:'beneficial',good_for:['dry','all']},
+  'glycerin':                  {flag:'beneficial',good_for:['dry','all']},
+  'glycerol':                  {flag:'beneficial',good_for:['dry','all']},
+  'niacinamide':               {flag:'beneficial',good_for:['acne','oily','hyperpigmentation','redness']},
+  'retinol':                   {flag:'beneficial',good_for:['aging','acne']},
+  'retinal':                   {flag:'beneficial',good_for:['aging','acne']},
+  'ascorbic acid':             {flag:'beneficial',good_for:['hyperpigmentation','aging']},
+  'l-ascorbic acid':           {flag:'beneficial',good_for:['hyperpigmentation','aging']},
+  'ceramide':                  {flag:'beneficial',good_for:['dry','sensitive']},
+  'ceramide np':               {flag:'beneficial',good_for:['dry','sensitive']},
+  'ceramide ap':               {flag:'beneficial',good_for:['dry','sensitive']},
+  'centella asiatica':         {flag:'beneficial',good_for:['sensitive','acne','redness']},
+  'madecassoside':             {flag:'beneficial',good_for:['sensitive','redness']},
+  'asiaticoside':              {flag:'beneficial',good_for:['sensitive','redness']},
+  'aloe vera':                 {flag:'beneficial',good_for:['sensitive','dry','redness']},
+  'aloe barbadensis':          {flag:'beneficial',good_for:['sensitive','dry','redness']},
+  'salicylic acid':            {flag:'beneficial',good_for:['acne','oily']},
+  'zinc oxide':                {flag:'beneficial',good_for:['acne','sensitive']},
+  'allantoin':                 {flag:'beneficial',good_for:['sensitive','dry']},
+  'panthenol':                 {flag:'beneficial',good_for:['dry','sensitive']},
+  'squalane':                  {flag:'beneficial',good_for:['dry','all']},
+  'shea butter':               {flag:'beneficial',good_for:['dry']},
+  'butyrospermum parkii':      {flag:'beneficial',good_for:['dry']},
+  'adenosine':                 {flag:'beneficial',good_for:['aging']},
+  'ubiquinone':                {flag:'beneficial',good_for:['aging']},
+  'palmitoyl tripeptide':      {flag:'beneficial',good_for:['aging']},
+  'palmitoyl pentapeptide':    {flag:'beneficial',good_for:['aging']},
+  'alpha arbutin':             {flag:'beneficial',good_for:['hyperpigmentation']},
+  'kojic acid':                {flag:'beneficial',good_for:['hyperpigmentation']},
+  'tranexamic acid':           {flag:'beneficial',good_for:['hyperpigmentation']},
+  'azelaic acid':              {flag:'beneficial',good_for:['acne','hyperpigmentation','redness']},
+  'avena sativa':              {flag:'beneficial',good_for:['sensitive','dry']},
+  'camellia sinensis':         {flag:'beneficial',good_for:['oily','aging','sensitive']},
+  'bakuchiol':                 {flag:'beneficial',good_for:['aging','sensitive']},
+  'ferulic acid':              {flag:'beneficial',good_for:['aging','hyperpigmentation']},
+  'resveratrol':               {flag:'beneficial',good_for:['aging']},
+  'tocopherol':                {flag:'beneficial',good_for:['dry','aging','all']},
+  'jojoba':                    {flag:'beneficial',good_for:['acne','oily','dry']},
+  'simmondsia chinensis':      {flag:'beneficial',good_for:['acne','dry']},
+  'rosehip':                   {flag:'beneficial',good_for:['aging','hyperpigmentation']},
+  'snail secretion filtrate':  {flag:'beneficial',good_for:['acne','aging','dry']},
+  'propolis':                  {flag:'beneficial',good_for:['acne','sensitive']},
+  'beta-glucan':               {flag:'beneficial',good_for:['dry','sensitive','aging']},
+  'beta glucan':               {flag:'beneficial',good_for:['dry','sensitive','aging']},
+  'lactic acid':               {flag:'beneficial',good_for:['dry','hyperpigmentation']},
+  'glycolic acid':             {flag:'beneficial',good_for:['hyperpigmentation','aging','acne']},
+  'mandelic acid':             {flag:'beneficial',good_for:['acne','hyperpigmentation','sensitive']},
 };
 
-// ── UTILS ──
+// ══ UTILS ══
 const $ = id => document.getElementById(id);
-const toast = msg => {
-  const t = $('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2600);
-};
 const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 const esc = s => s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+const toast = msg => {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+};
 
 function showView(id) {
+  if ($('view-scan').classList.contains('active') && id !== 'view-scan') stopScan();
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   $(id).classList.add('active');
-  window.scrollTo(0, 0);
+  window.scrollTo(0,0);
+  updateCmpFab(id);
 }
 
-// ── ANALYSIS ──
+// ══ STORAGE: HISTORY & FAVS ══
+const pCache = {};
+
+function getHistory() { try { return JSON.parse(localStorage.getItem(HKEY)) || []; } catch { return []; } }
+function addToHistory(p) {
+  const slim = {code:p.code||'', product_name:p.product_name||'', brands:p.brands||'', image_front_url:p.image_front_url||'', ingredients_text:p.ingredients_text||''};
+  const hist = getHistory().filter(x => x.code !== slim.code);
+  hist.unshift(slim);
+  localStorage.setItem(HKEY, JSON.stringify(hist.slice(0,12)));
+}
+
+function getFavs() { try { return JSON.parse(localStorage.getItem(FAVKEY)) || []; } catch { return []; } }
+function isFav(code) { return getFavs().some(p => p.code === code); }
+function toggleFav(p) {
+  const slim = {code:p.code||'', product_name:p.product_name||'', brands:p.brands||'', image_front_url:p.image_front_url||'', ingredients_text:p.ingredients_text||''};
+  let favs = getFavs();
+  const idx = favs.findIndex(x => x.code === slim.code);
+  if (idx >= 0) { favs.splice(idx,1); localStorage.setItem(FAVKEY, JSON.stringify(favs)); return false; }
+  favs.unshift(slim);
+  localStorage.setItem(FAVKEY, JSON.stringify(favs.slice(0,50)));
+  return true;
+}
+
+// ══ ANALYSIS ══
 function parseIngs(text) {
   if (!text) return [];
-  return text.toLowerCase()
-    .split(/[,;\/]/)
-    .map(i => i.replace(/\*+|\d+(\.\d+)?%?|\(.*?\)|^\d+\.\s*/g, '').replace(/\s+/g, ' ').trim())
+  return text.toLowerCase().split(/[,;\/]/)
+    .map(i => i.replace(/\*+|\d+(\.\d+)?%?|\(.*?\)|^\d+\.\s*/g,'').replace(/\s+/g,' ').trim())
     .filter(i => i.length > 2);
 }
 
@@ -757,65 +518,77 @@ function analyze(ingredientsText) {
   if (!profile || !ingredientsText) return null;
   const parsed = parseIngs(ingredientsText);
   const traits = new Set([profile.skinType, ...profile.concerns]);
-
-  const seen = new Set();
-  const flags = [], benefits = [];
-
+  const seen = new Set(), flags = [], benefits = [];
   for (const [name, data] of Object.entries(DB)) {
     if (seen.has(name)) continue;
     const found = parsed.some(i => i.includes(name) || (name.length > 6 && name.includes(i) && i.length > 5));
     if (!found) continue;
     seen.add(name);
-
     if (data.flag !== 'beneficial') {
-      if (data.bad_for?.some(t => traits.has(t))) flags.push({ name, ...data });
+      if (data.bad_for?.some(t => traits.has(t))) flags.push({name, ...data});
     } else {
-      if (data.good_for?.some(g => g === 'all' || traits.has(g))) benefits.push({ name, ...data });
+      if (data.good_for?.some(g => g === 'all' || traits.has(g))) benefits.push({name, ...data});
     }
   }
-
-  const penalty = flags.reduce((s, f) => s + (f.severity || 3), 0);
-  const score = Math.max(0, Math.min(100, 70 - penalty * 7 + benefits.length * 4));
-  const grade = score >= 82 ? 'A' : score >= 62 ? 'B' : score >= 42 ? 'C' : 'D';
-  return { grade, score, flags, benefits };
+  const penalty = flags.reduce((s,f) => s + (f.severity||3), 0);
+  const score = Math.max(0, Math.min(100, 70 - penalty*7 + benefits.length*4));
+  const grade = score>=82?'A':score>=62?'B':score>=42?'C':'D';
+  return {grade, score, flags, benefits};
 }
 
-function gradeClass(g) { return { A:'g-A', B:'g-B', C:'g-C', D:'g-D' }[g] || 'g-x'; }
-function gradeText(g) {
-  return { A:'Great match', B:'Good match', C:'Use caution', D:'Not recommended' }[g] || 'No data';
-}
+function gradeClass(g) { return {A:'g-A',B:'g-B',C:'g-C',D:'g-D'}[g]||'g-x'; }
+function gradeText(g) { return {A:'Great match',B:'Good match',C:'Use caution',D:'Not recommended'}[g]||'No data'; }
 
-// ── OPEN BEAUTY FACTS ──
+// ══ OPEN BEAUTY FACTS ══
 async function searchOBF(q) {
   const url = `https://world.openbeautyfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&fields=code,product_name,brands,ingredients_text,image_front_url&page_size=18`;
   const res = await fetch(url);
   if (!res.ok) throw new Error('API error');
   const data = await res.json();
-  return (data.products || []).filter(p => p.product_name && p.product_name.trim());
+  return (data.products||[]).filter(p => p.product_name?.trim());
 }
 
-// ── BUY LINKS ──
+async function fetchByBarcode(code) {
+  $('scan-hint').textContent = 'Found! Loading product...';
+  $('scan-status').textContent = `Barcode: ${code}`;
+  try {
+    const res = await fetch(`https://world.openbeautyfacts.org/api/v2/product/${code}?fields=code,product_name,brands,ingredients_text,image_front_url`);
+    const data = await res.json();
+    if (data.status === 1 && data.product?.product_name) {
+      const p = data.product;
+      p.code = code;
+      pCache[code] = p;
+      addToHistory(p);
+      prodBackView = 'view-home';
+      showView('view-product');
+      $('prod-nav-title').textContent = p.product_name;
+      updateFavBtn(code);
+      updateCmpBtn(code);
+      renderProduct(p, code);
+      renderHomeContent();
+    } else {
+      toast('Product not found — try searching by name');
+      $('scan-hint').textContent = 'Point camera at a barcode';
+      $('scan-status').textContent = '';
+      if (scanActive) startScanLoop();
+    }
+  } catch {
+    toast('Network error'); $('scan-hint').textContent = 'Point camera at a barcode';
+  }
+}
+
+// ══ BUY LINKS ══
 function buyLinks(name, brand) {
-  const q = encodeURIComponent([brand, name].filter(Boolean).join(' '));
+  const q = encodeURIComponent([brand,name].filter(Boolean).join(' '));
   return [
-    { name:'Amazon',            url:`https://www.amazon.com/s?k=${q}`,                         icon:'🛒' },
-    { name:'iHerb',             url:`https://www.iherb.com/search?query=${q}`,                 icon:'🌿' },
-    { name:'Sephora',           url:`https://www.sephora.com/search?keyword=${q}`,             icon:'💄' },
-    { name:'Olive Young Global',url:`https://global.oliveyoung.com/search?keyword=${q}`,      icon:'🌸' },
+    {name:'Amazon',           url:`https://www.amazon.com/s?k=${q}`,              icon:'🛒'},
+    {name:'iHerb',            url:`https://www.iherb.com/search?query=${q}`,      icon:'🌿'},
+    {name:'Sephora',          url:`https://www.sephora.com/search?keyword=${q}`,  icon:'💄'},
+    {name:'Olive Young Global',url:`https://global.oliveyoung.com/search?keyword=${q}`, icon:'🌸'},
   ];
 }
 
-// ── PROFILE DISPLAY ──
-const TYPE_LABELS = { oily:'Oily', dry:'Dry', combination:'Combination', sensitive:'Sensitive', normal:'Normal' };
-const CONCERN_LABELS = { acne:'Acne', dry:'Dryness', aging:'Anti-Aging', hyperpigmentation:'Dark Spots', redness:'Redness' };
-
-function updateHomeProfile() {
-  if (!profile) return;
-  const parts = [TYPE_LABELS[profile.skinType] || cap(profile.skinType), ...profile.concerns.map(c => CONCERN_LABELS[c] || cap(c))];
-  $('profile-tag').textContent = '👤 ' + parts.join(' · ');
-}
-
-// ── ONBOARDING ──
+// ══ ONBOARDING ══
 let obType = null;
 const obConcerns = new Set();
 
@@ -827,142 +600,193 @@ document.querySelectorAll('.skin-card').forEach(card => {
     $('ob-next').disabled = false;
   });
 });
-
 $('ob-next').addEventListener('click', () => {
   if (!obType) return;
-  $('ob-s1').style.display = 'none';
-  $('ob-s2').style.display = 'flex';
+  $('ob-s1').style.display='none'; $('ob-s2').style.display='flex';
   $('ob-p1').classList.add('done');
 });
-
 document.querySelectorAll('.concern-chip').forEach(chip => {
   chip.addEventListener('click', () => {
     const c = chip.dataset.c;
-    if (c === 'none') {
+    if (c==='none') {
       obConcerns.clear();
       document.querySelectorAll('.concern-chip').forEach(ch => ch.classList.remove('sel'));
-      chip.classList.add('sel');
-      obConcerns.add('none');
+      chip.classList.add('sel'); obConcerns.add('none');
     } else {
-      const noneBtn = document.querySelector('.concern-chip[data-c="none"]');
-      noneBtn.classList.remove('sel');
+      document.querySelector('.concern-chip[data-c="none"]').classList.remove('sel');
       obConcerns.delete('none');
       if (obConcerns.has(c)) { obConcerns.delete(c); chip.classList.remove('sel'); }
       else { obConcerns.add(c); chip.classList.add('sel'); }
     }
   });
 });
-
 $('ob-back').addEventListener('click', () => {
-  $('ob-s2').style.display = 'none';
-  $('ob-s1').style.display = 'flex';
+  $('ob-s2').style.display='none'; $('ob-s1').style.display='flex';
   $('ob-p1').classList.remove('done');
 });
-
 $('ob-finish').addEventListener('click', () => {
   if (!obType) return;
-  const p = { skinType: obType, concerns: [...obConcerns].filter(c => c !== 'none') };
-  localStorage.setItem(PKEY, JSON.stringify(p));
-  profile = p;
-  updateHomeProfile();
-  showView('view-home');
-  toast('Profile saved ✓');
+  profile = {skinType:obType, concerns:[...obConcerns].filter(c=>c!=='none')};
+  localStorage.setItem(PKEY, JSON.stringify(profile));
+  updateHomeProfile(); renderHomeContent();
+  showView('view-home'); toast('Profile saved ✓');
 });
 
-// ── HOME ──
+// ══ HOME ══
+const TYPE_LABELS = {oily:'Oily',dry:'Dry',combination:'Combination',sensitive:'Sensitive',normal:'Normal'};
+const CONCERN_LABELS = {acne:'Acne',dry:'Dryness',aging:'Anti-Aging',hyperpigmentation:'Dark Spots',redness:'Redness'};
+
+function updateHomeProfile() {
+  if (!profile) return;
+  const parts = [TYPE_LABELS[profile.skinType]||cap(profile.skinType), ...profile.concerns.map(c=>CONCERN_LABELS[c]||cap(c))];
+  $('profile-tag').textContent = '👤 ' + parts.join(' · ');
+}
+
+function miniCard(p, backView='view-home') {
+  const an = analyze(p.ingredients_text);
+  const code = p.code||'';
+  const imgHtml = p.image_front_url
+    ? `<img class="hist-img" src="${esc(p.image_front_url)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/><div class="hist-img-ph" style="display:none;">🧴</div>`
+    : `<div class="hist-img-ph">🧴</div>`;
+  return `<div class="hist-card" onclick="openCached('${esc(code)}','${backView}')">
+    ${imgHtml}
+    <div class="hist-name">${esc(p.product_name)}</div>
+    ${an ? `<span class="gbadge ${gradeClass(an.grade)}" style="font-size:.64rem;padding:2px 7px;">${an.grade}</span>` : ''}
+  </div>`;
+}
+
+function renderHomeContent() {
+  const hist = getHistory();
+  const favs = getFavs();
+  // Recent tab
+  $('tab-recent').innerHTML = hist.length
+    ? `<div class="hist-scroll">${hist.map(p=>{pCache[p.code]=p;return miniCard(p,'view-home');}).join('')}</div>`
+    : `<p class="tab-empty">Products you view will appear here.</p>`;
+  // Saved tab
+  $('tab-saved').innerHTML = favs.length
+    ? `<div class="hist-scroll">${favs.map(p=>{pCache[p.code]=p;return miniCard(p,'view-home');}).join('')}</div>`
+    : `<p class="tab-empty">Tap ❤️ on a product to save it here.</p>`;
+}
+
+// tabs
+document.querySelectorAll('.h-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.h-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    ['recent','saved','search'].forEach(id => $(`tab-${id}`).style.display = id===tab.dataset.t?'block':'none');
+  });
+});
+
 function doSearch(q) {
-  q = q.trim();
-  if (!q) return;
+  q = q.trim(); if (!q) return;
   $('res-inp').value = q;
   showView('view-results');
   loadResults(q);
 }
-
 $('home-go').addEventListener('click', () => doSearch($('home-inp').value));
-$('home-inp').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch($('home-inp').value); });
-document.querySelectorAll('.sugg-chip').forEach(b => {
-  b.addEventListener('click', () => doSearch(b.dataset.q));
-});
+$('home-inp').addEventListener('keydown', e => { if(e.key==='Enter') doSearch($('home-inp').value); });
+document.querySelectorAll('.sugg-chip').forEach(b => b.addEventListener('click', () => doSearch(b.dataset.q)));
 $('profile-btn').addEventListener('click', () => {
-  obType = null; obConcerns.clear();
-  document.querySelectorAll('.skin-card, .concern-chip').forEach(el => el.classList.remove('sel'));
-  $('ob-next').disabled = true;
-  $('ob-s1').style.display = 'flex'; $('ob-s2').style.display = 'none';
+  obType=null; obConcerns.clear();
+  document.querySelectorAll('.skin-card,.concern-chip').forEach(el=>el.classList.remove('sel'));
+  $('ob-next').disabled=true;
+  $('ob-s1').style.display='flex'; $('ob-s2').style.display='none';
   $('ob-p1').classList.remove('done'); $('ob-p2').classList.remove('done');
   showView('view-onboard');
 });
 
-// ── RESULTS ──
+// ══ RESULTS ══
 $('res-back').addEventListener('click', () => showView('view-home'));
-$('res-go').addEventListener('click', () => { const q = $('res-inp').value.trim(); if (q) loadResults(q); });
-$('res-inp').addEventListener('keydown', e => { if (e.key === 'Enter') { const q = $('res-inp').value.trim(); if (q) loadResults(q); } });
-
-const pCache = {};
+$('res-go').addEventListener('click', () => { const q=$('res-inp').value.trim(); if(q) loadResults(q); });
+$('res-inp').addEventListener('keydown', e => { if(e.key==='Enter'){ const q=$('res-inp').value.trim(); if(q) loadResults(q); } });
 
 async function loadResults(query) {
-  const list = $('res-list');
-  const meta = $('res-meta');
-  list.innerHTML = `<div class="state-box"><div class="spinner"></div><div class="state-sub">Searching Open Beauty Facts...</div></div>`;
-  meta.textContent = '';
-
+  $('res-list').innerHTML = `<div class="state-box"><div class="spinner"></div><div class="state-sub">Searching Open Beauty Facts...</div></div>`;
+  $('res-meta').textContent = '';
   try {
     const products = await searchOBF(query);
     if (!products.length) {
-      list.innerHTML = `<div class="state-box"><div class="state-emoji">🔍</div><div class="state-title">No products found</div><div class="state-sub">Try a different name, brand, or ingredient.</div></div>`;
+      $('res-list').innerHTML = `<div class="state-box"><div class="state-emoji">🔍</div><div class="state-title">No products found</div><div class="state-sub">Try a different name or brand.</div></div>`;
       return;
     }
-
-    meta.textContent = `${products.length} product${products.length !== 1 ? 's' : ''} found`;
-
-    list.innerHTML = products.map((p, i) => {
-      const id = (p.code || `p${i}`).replace(/['"<>]/g, '');
+    $('res-meta').textContent = `${products.length} product${products.length!==1?'s':''} found`;
+    $('res-list').innerHTML = products.map((p,i) => {
+      const id = (p.code||`p${i}`).replace(/['"<>]/g,'');
       pCache[id] = p;
       const an = analyze(p.ingredients_text);
       const hasIng = !!p.ingredients_text;
-
-      let badgeHtml;
-      if (!hasIng) {
-        badgeHtml = `<span class="gbadge g-x">No ingredient data</span>`;
-      } else if (an) {
-        badgeHtml = `<span class="gbadge ${gradeClass(an.grade)}">${an.grade} — ${gradeText(an.grade)}</span>`;
-      } else {
-        badgeHtml = `<span class="gbadge g-x">Profile missing</span>`;
-      }
-
+      const badge = !hasIng
+        ? `<span class="gbadge g-x">No ingredient data</span>`
+        : an ? `<span class="gbadge ${gradeClass(an.grade)}">${an.grade} — ${gradeText(an.grade)}</span>`
+             : `<span class="gbadge g-x">Set profile to analyze</span>`;
       const imgHtml = p.image_front_url
         ? `<img class="prod-img" src="${esc(p.image_front_url)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/><div class="prod-img-ph" style="display:none;">🧴</div>`
         : `<div class="prod-img-ph">🧴</div>`;
-
       const brand = p.brands ? esc(p.brands.split(',')[0].trim()) : '';
-
-      return `<div class="product-card" onclick="openProduct('${id}')">
+      return `<div class="product-card" onclick="openProduct('${id}','view-results')">
         ${imgHtml}
         <div class="prod-info">
-          ${brand ? `<div class="prod-brand">${brand}</div>` : ''}
+          ${brand?`<div class="prod-brand">${brand}</div>`:''}
           <div class="prod-name">${esc(p.product_name)}</div>
-          ${badgeHtml}
+          ${badge}
         </div>
         <div class="prod-chevron">›</div>
       </div>`;
     }).join('');
-
   } catch {
-    list.innerHTML = `<div class="state-box"><div class="state-emoji">😕</div><div class="state-title">Couldn't load results</div><div class="state-sub">Check your connection and try again.</div></div>`;
+    $('res-list').innerHTML = `<div class="state-box"><div class="state-emoji">😕</div><div class="state-title">Couldn't load results</div><div class="state-sub">Check your connection and try again.</div></div>`;
   }
 }
 
-// ── PRODUCT DETAIL ──
-$('prod-back').addEventListener('click', () => showView('view-results'));
+// ══ PRODUCT DETAIL ══
+$('prod-back').addEventListener('click', () => { showView(prodBackView); if(prodBackView==='view-home') renderHomeContent(); });
 
-function openProduct(id) {
-  const p = pCache[id];
+$('prod-fav-btn').addEventListener('click', () => {
+  if (!currentProdId) return;
+  const p = pCache[currentProdId];
   if (!p) return;
+  const added = toggleFav(p);
+  $('prod-fav-btn').textContent = added ? '❤️' : '🤍';
+  toast(added ? 'Saved ❤️' : 'Removed from saved');
+  renderHomeContent();
+});
+
+$('prod-cmp-btn').addEventListener('click', () => {
+  if (!currentProdId) return;
+  const inList = compareList.includes(currentProdId);
+  if (inList) { compareList = compareList.filter(id=>id!==currentProdId); toast('Removed from compare'); }
+  else {
+    if (compareList.length >= 2) compareList.shift();
+    compareList.push(currentProdId);
+    toast(compareList.length===2 ? 'Ready! Tap ⊞ below to compare →' : 'Added to compare');
+  }
+  updateCmpBtn(currentProdId);
+  updateCmpFab();
+});
+
+function updateFavBtn(code) { $('prod-fav-btn').textContent = isFav(code) ? '❤️' : '🤍'; }
+function updateCmpBtn(code) { $('prod-cmp-btn').textContent = compareList.includes(code) ? '☑️' : '⊞'; }
+
+function openProduct(id, backView='view-results') {
+  const p = pCache[id]; if (!p) return;
+  currentProdId = id;
+  prodBackView = backView;
+  addToHistory(p);
   showView('view-product');
   $('prod-nav-title').textContent = p.product_name || '';
-  renderProduct(p);
+  updateFavBtn(p.code||id);
+  updateCmpBtn(id);
+  renderProduct(p, id);
+  renderHomeContent();
 }
 
-function renderProduct(p) {
+function openCached(id, backView) {
+  const p = pCache[id];
+  if (!p) { toast('Product data unavailable — search again'); return; }
+  openProduct(id, backView);
+}
+
+function renderProduct(p, id) {
   const an = analyze(p.ingredients_text);
   const hasIng = !!p.ingredients_text;
   const brand = p.brands ? p.brands.split(',')[0].trim() : '';
@@ -972,100 +796,189 @@ function renderProduct(p) {
     ? `<img class="hero-img" src="${esc(p.image_front_url)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/><div class="hero-img-ph" style="display:none;">🧴</div>`
     : `<div class="hero-img-ph">🧴</div>`;
 
-  // Score section
   let scoreHtml = '';
   if (an) {
-    const fillCls = an.score >= 70 ? 'sf-hi' : an.score >= 45 ? 'sf-md' : 'sf-lo';
-    scoreHtml = `
-      <div class="section">
-        <div class="sec-title">📊 Skin Match Score</div>
-        <div class="score-row"><span>${gradeText(an.grade)}</span><span><strong>${an.score}</strong> / 100</span></div>
-        <div class="score-track"><div class="score-fill ${fillCls}" style="width:${an.score}%"></div></div>
-      </div>`;
+    const fc = an.score>=70?'sf-hi':an.score>=45?'sf-md':'sf-lo';
+    scoreHtml = `<div class="section"><div class="sec-title">📊 Skin Match Score</div><div class="score-row"><span>${gradeText(an.grade)}</span><span><strong>${an.score}</strong>/100</span></div><div class="score-track"><div class="score-fill ${fc}" style="width:${an.score}%"></div></div></div>`;
   }
 
-  // Flags section
-  let flagsBody = '';
-  if (!hasIng) {
-    flagsBody = `<p class="empty-note">No ingredient list available for this product in the database.</p>`;
-  } else if (an && an.flags.length > 0) {
-    flagsBody = an.flags.map(f => {
-      const sev = f.severity >= 4 ? 'hi' : f.severity >= 3 ? 'md' : 'lo';
-      const icon = f.flag === 'comedogenic' ? '🔴' : f.flag === 'allergen' ? '⚠️' : '⚡';
-      return `<div class="flag-item">
-        <div class="flag-ic fi-${sev}">${icon}</div>
-        <div>
-          <div class="flag-name">${esc(cap(f.name))}</div>
-          <div class="flag-sub">${cap(f.flag)}${f.note ? ' · ' + f.note : ''}</div>
-        </div>
-      </div>`;
-    }).join('');
-  } else if (an) {
-    flagsBody = `<p class="empty-note">🎉 No flagged ingredients for your skin type.</p>`;
-  }
+  let flagsBody = !hasIng
+    ? `<p class="empty-note">No ingredient list in database for this product.</p>`
+    : an && an.flags.length
+      ? an.flags.map(f=>{const sev=f.severity>=4?'hi':f.severity>=3?'md':'lo';const icon=f.flag==='comedogenic'?'🔴':f.flag==='allergen'?'⚠️':'⚡';return`<div class="flag-item"><div class="flag-ic fi-${sev}">${icon}</div><div><div class="flag-name">${esc(cap(f.name))}</div><div class="flag-sub">${cap(f.flag)}${f.note?' · '+f.note:''}</div></div></div>`;}).join('')
+      : an ? `<p class="empty-note">🎉 No flagged ingredients for your skin type.</p>` : '';
 
-  // Benefits section
-  let bensBody = '';
-  if (hasIng && an) {
-    if (an.benefits.length > 0) {
-      bensBody = `<div class="benefit-chips">${an.benefits.map(b => `<span class="benefit-chip">✓ ${esc(cap(b.name))}</span>`).join('')}</div>`;
-    } else {
-      bensBody = `<p class="empty-note">No standout beneficial ingredients detected for your skin.</p>`;
-    }
-  }
+  let bensBody = hasIng && an
+    ? an.benefits.length
+      ? `<div class="benefit-chips">${an.benefits.map(b=>`<span class="benefit-chip">✓ ${esc(cap(b.name))}</span>`).join('')}</div>`
+      : `<p class="empty-note">No standout beneficial ingredients detected.</p>`
+    : '<p class="empty-note">Complete your profile to see personalized benefits.</p>';
 
-  // All ingredients toggle
-  const ingToggle = hasIng ? `
-    <div class="section">
-      <button class="ing-toggle" onclick="this.nextElementSibling.classList.toggle('open'); this.textContent=this.nextElementSibling.classList.contains('open')?'Hide full list ↑':'Show full ingredient list ↓'">Show full ingredient list ↓</button>
-      <div class="ing-text">${esc(p.ingredients_text)}</div>
-    </div>` : '';
+  const ingToggle = hasIng ? `<div class="section"><button class="ing-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Hide full list ↑':'Show full ingredient list ↓'">Show full ingredient list ↓</button><div class="ing-text">${esc(p.ingredients_text)}</div></div>` : '';
 
   $('prod-content').innerHTML = `
     <div class="product-hero">
       ${imgHtml}
       <div class="hero-info">
-        ${brand ? `<div class="hero-brand">${esc(brand)}</div>` : ''}
+        ${brand?`<div class="hero-brand">${esc(brand)}</div>`:''}
         <div class="hero-name">${esc(p.product_name)}</div>
-        ${an
-          ? `<span class="gbadge ${gradeClass(an.grade)}" style="padding:5px 12px;font-size:0.78rem;">${an.grade} — ${gradeText(an.grade)}</span>`
-          : `<span class="gbadge g-x" style="padding:5px 12px;font-size:0.78rem;">No data</span>`
-        }
+        ${an?`<span class="gbadge ${gradeClass(an.grade)}" style="padding:5px 12px;font-size:.78rem;">${an.grade} — ${gradeText(an.grade)}</span>`:`<span class="gbadge g-x" style="padding:5px 12px;font-size:.78rem;">No data</span>`}
       </div>
     </div>
-
     ${scoreHtml}
-
-    <div class="section">
-      <div class="sec-title">⚠️ Flagged Ingredients <span class="sec-count">${an ? an.flags.length : '?'}</span></div>
-      ${flagsBody}
-    </div>
-
-    <div class="section">
-      <div class="sec-title">✅ Good for Your Skin <span class="sec-count">${an ? an.benefits.length : '?'}</span></div>
-      ${bensBody || '<p class="empty-note">Add your profile to see personalized benefits.</p>'}
-    </div>
-
+    <div class="section"><div class="sec-title">⚠️ Flagged Ingredients <span class="sec-count">${an?an.flags.length:'?'}</span></div>${flagsBody}</div>
+    <div class="section"><div class="sec-title">✅ Good for Your Skin <span class="sec-count">${an?an.benefits.length:'?'}</span></div>${bensBody}</div>
     ${ingToggle}
+    <div class="section" style="margin-bottom:0;"><div class="sec-title">🛒 Where to Buy</div>${links.map(l=>`<a class="buy-link" href="${l.url}" target="_blank" rel="noopener"><div class="buy-ic">${l.icon}</div><div class="buy-name">${l.name}</div><div class="buy-arrow">→</div></a>`).join('')}</div>
+    <div style="height:36px;"></div>`;
+}
 
-    <div class="section" style="margin-bottom:0;">
-      <div class="sec-title">🛒 Where to Buy</div>
-      ${links.map(l => `<a class="buy-link" href="${l.url}" target="_blank" rel="noopener">
-        <div class="buy-ic">${l.icon}</div>
-        <div class="buy-name">${l.name}</div>
-        <div class="buy-arrow">→</div>
-      </a>`).join('')}
+// ══ BARCODE SCAN ══
+$('scan-open').addEventListener('click', openScanView);
+$('scan-back').addEventListener('click', () => { stopScan(); showView('view-home'); });
+$('scan-cancel').addEventListener('click', () => { stopScan(); showView('view-home'); });
+$('scan-inp-go').addEventListener('click', () => { const c=$('scan-inp').value.trim(); if(c){stopScan();fetchByBarcode(c);} });
+$('scan-inp').addEventListener('keydown', e => { if(e.key==='Enter'){const c=$('scan-inp').value.trim();if(c){stopScan();fetchByBarcode(c);}} });
+$('scan-fb-go').addEventListener('click', () => { const c=$('scan-fb-inp').value.trim(); if(c) fetchByBarcode(c); });
+$('scan-fb-cancel').addEventListener('click', () => showView('view-home'));
+
+function openScanView() {
+  showView('view-scan');
+  if (!('BarcodeDetector' in window)) {
+    $('scan-unsupported').style.display='flex';
+    return;
+  }
+  startScan();
+}
+
+async function startScan() {
+  scanActive = true;
+  $('scan-hint').textContent = 'Starting camera...';
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1280}}});
+    const vid = $('scan-vid');
+    vid.srcObject = scanStream;
+    await vid.play();
+    $('scan-hint').textContent = 'Point camera at a barcode';
+    startScanLoop();
+  } catch(e) {
+    $('scan-hint').textContent = 'Camera access denied';
+    $('scan-status').textContent = 'Use the text field below to enter a barcode';
+    scanActive = false;
+  }
+}
+
+async function startScanLoop() {
+  const detector = new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code']});
+  const vid = $('scan-vid');
+  const loop = async () => {
+    if (!scanActive) return;
+    try {
+      const results = await detector.detect(vid);
+      if (results.length > 0) {
+        scanActive = false;
+        fetchByBarcode(results[0].rawValue);
+        return;
+      }
+    } catch {}
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+
+function stopScan() {
+  scanActive = false;
+  if (scanStream) { scanStream.getTracks().forEach(t=>t.stop()); scanStream=null; }
+  const vid = $('scan-vid'); vid.srcObject=null;
+}
+
+// ══ COMPARE ══
+function updateCmpFab(currentView) {
+  const fab = $('cmp-fab');
+  if (compareList.length === 0 || currentView === 'view-compare') { fab.style.display='none'; return; }
+  fab.style.display='block';
+  $('cmp-count').textContent = compareList.length;
+}
+
+$('cmp-fab-btn').addEventListener('click', () => {
+  showView('view-compare');
+  renderCompare();
+});
+$('cmp-back').addEventListener('click', () => showView(prodBackView==='view-home'?'view-home':'view-results'));
+$('cmp-clear').addEventListener('click', () => { compareList=[]; updateCmpFab(); document.querySelectorAll('.icon-btn[id="prod-cmp-btn"]').forEach(b=>b.textContent='⊞'); renderCompare(); });
+
+function removeCmpItem(id) {
+  compareList = compareList.filter(i=>i!==id);
+  updateCmpFab();
+  if(currentProdId) updateCmpBtn(currentProdId);
+  renderCompare();
+}
+
+function renderCompare() {
+  const content = $('cmp-content');
+  if (compareList.length === 0) {
+    content.innerHTML = `<div class="state-box"><div class="state-emoji">⊞</div><div class="state-title">Nothing to compare yet</div><div class="state-sub">Open a product and tap ⊞ to add it to compare.</div></div>`;
+    return;
+  }
+  const products = compareList.map(id=>pCache[id]).filter(Boolean);
+
+  // Slot HTML generator
+  const slot = (p, id) => {
+    const an = analyze(p.ingredients_text);
+    const imgHtml = p.image_front_url
+      ? `<img class="cmp-pimg" src="${esc(p.image_front_url)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/><div class="cmp-pimg-ph" style="display:none;">🧴</div>`
+      : `<div class="cmp-pimg-ph">🧴</div>`;
+    return `<div class="cmp-pcard">${imgHtml}<div class="cmp-pname">${esc((p.product_name||'').substring(0,40))}</div>${an?`<span class="gbadge ${gradeClass(an.grade)}" style="font-size:.68rem;">${an.grade}</span>`:''}<button class="cmp-remove-btn" onclick="removeCmpItem('${id}')">✕ Remove</button></div>`;
+  };
+
+  const emptySlot = `<div class="cmp-empty-slot" onclick="showView('view-results')"><div style="font-size:1.6rem;">+</div><span>Add a product</span></div>`;
+
+  let cardsHtml;
+  if (products.length === 1) {
+    cardsHtml = `<div class="cmp-cards-row">${slot(products[0],compareList[0])}<div class="cmp-vs-col">vs</div>${emptySlot}</div>`;
+    content.innerHTML = cardsHtml + `<div class="state-box" style="padding:32px 24px;"><div class="state-sub">Add a second product to see the comparison.</div></div>`;
+    return;
+  }
+
+  const [p1,p2] = products;
+  const [a1,a2] = [analyze(p1.ingredients_text), analyze(p2.ingredients_text)];
+  cardsHtml = `<div class="cmp-cards-row">${slot(p1,compareList[0])}<div class="cmp-vs-col">vs</div>${slot(p2,compareList[1])}</div>`;
+
+  let winnerHtml = '';
+  if (a1 && a2) {
+    const winner = a1.score >= a2.score ? p1 : p2;
+    winnerHtml = `<div class="cmp-winner">🏆 ${esc(winner.product_name?.split(' ').slice(0,4).join(' '))} is a better match for your skin</div>`;
+  }
+
+  // Flags
+  const f1Names = (a1?.flags||[]).map(f=>f.name);
+  const f2Names = (a2?.flags||[]).map(f=>f.name);
+  const flagsHtml = `<div class="section"><div class="sec-title">⚠️ Flagged Ingredients</div><div class="cmp-2col">
+    <div><div class="cmp-col-head">${esc((p1.product_name||'').split(' ')[0])}</div>${f1Names.length?f1Names.map(n=>`<div class="cmp-row cmp-bad">• ${esc(cap(n))}</div>`).join(''):'<div class="cmp-row cmp-good">None ✓</div>'}</div>
+    <div><div class="cmp-col-head">${esc((p2.product_name||'').split(' ')[0])}</div>${f2Names.length?f2Names.map(n=>`<div class="cmp-row cmp-bad">• ${esc(cap(n))}</div>`).join(''):'<div class="cmp-row cmp-good">None ✓</div>'}</div>
+  </div></div>`;
+
+  // Benefits
+  const b1 = new Set((a1?.benefits||[]).map(b=>b.name));
+  const b2 = new Set((a2?.benefits||[]).map(b=>b.name));
+  const shared = [...b1].filter(n=>b2.has(n));
+  const only1  = [...b1].filter(n=>!b2.has(n));
+  const only2  = [...b2].filter(n=>!b1.has(n));
+  const bensHtml = `<div class="section" style="margin-bottom:0;"><div class="sec-title">✅ Benefits</div>
+    ${shared.length?`<div class="cmp-shared"><strong>Both have:</strong> ${shared.map(cap).join(', ')}</div>`:''}
+    <div class="cmp-2col">
+      <div>${only1.length?`<div class="cmp-col-head">Only in ${esc((p1.product_name||'').split(' ')[0])}</div>${only1.map(n=>`<div class="cmp-row cmp-good">✓ ${cap(n)}</div>`).join('')}`:''}</div>
+      <div>${only2.length?`<div class="cmp-col-head">Only in ${esc((p2.product_name||'').split(' ')[0])}</div>${only2.map(n=>`<div class="cmp-row cmp-good">✓ ${cap(n)}</div>`).join('')}`:''}</div>
     </div>
-    <div style="height:36px;"></div>
-  `;
+    ${!shared.length&&!only1.length&&!only2.length?'<p class="empty-note">No notable benefits detected in either product.</p>':''}
+  </div><div style="height:36px;"></div>`;
+
+  content.innerHTML = cardsHtml + winnerHtml + flagsHtml + bensHtml;
 }
 
-// ── INIT ──
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-if (profile) {
-  updateHomeProfile();
-  showView('view-home');
-}
+// ══ INIT ══
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if (profile) { updateHomeProfile(); renderHomeContent(); showView('view-home'); }
 </script>
 </body>
 </html>
