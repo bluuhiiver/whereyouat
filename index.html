@@ -1,654 +1,1071 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"/>
-  <title>whereyouat</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Skinly — Know Your Ingredients</title>
   <link rel="manifest" href="manifest.json"/>
-  <meta name="theme-color" content="#f5f5f0"/>
+  <meta name="theme-color" content="#E11D48"/>
+  <meta name="description" content="Personalized skincare ingredient analyzer. Find products matched to your skin type."/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Unbounded:wght@700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
     :root {
-      --bg:#f5f5f0; --white:#ffffff; --black:#0a0a0a;
-      --blue:#1a5cff; --blue-dark:#0033cc; --blue-pale:#e8f0ff;
-      --gray:#888880; --gray-light:#e8e8e3; --border:#d0d0c8;
-      --danger:#ff2d55; --success:#00c853;
+      --bg: #F7F7F5;
+      --white: #FFFFFF;
+      --black: #18181B;
+      --primary: #E11D48;
+      --primary-dark: #BE123C;
+      --primary-light: #FFF1F2;
+      --success: #059669;
+      --success-bg: #ECFDF5;
+      --warning: #B45309;
+      --warning-bg: #FFFBEB;
+      --danger: #DC2626;
+      --danger-bg: #FEF2F2;
+      --info: #0369A1;
+      --info-bg: #E0F2FE;
+      --gray: #71717A;
+      --gray-light: #F4F4F5;
+      --border: #E4E4E7;
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:var(--bg);color:var(--black);font-family:'Unbounded',sans-serif;height:100dvh;overflow:hidden;display:flex;flex-direction:column;}
 
-    /* HEADER */
-    header{z-index:1000;background:var(--black);padding:0 14px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:3px solid var(--blue);}
-    .logo-wrap{display:flex;align-items:center;gap:9px;}
-    .logo-badge{background:var(--blue);color:var(--white);font-family:'DM Mono',monospace;font-size:0.5rem;font-weight:500;letter-spacing:0.1em;padding:4px 7px;border-radius:4px;transform:rotate(-3deg);display:inline-block;}
-    .logo-main{font-size:0.88rem;font-weight:900;color:var(--white);letter-spacing:-0.04em;}
-    .logo-main .hi{color:var(--blue);}
-    .status-bar{display:flex;gap:5px;}
-    .status-pill{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:100px;border:1.5px solid #2a2a2a;background:#161616;font-family:'DM Mono',monospace;font-size:0.47rem;letter-spacing:0.08em;color:#444;transition:all 0.25s;}
-    .status-pill.active{border-color:var(--success);background:rgba(0,200,83,0.1);color:var(--success);}
-    .status-pill.error{border-color:var(--danger);color:var(--danger);}
-    .status-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
-    .status-pill.active .status-dot{animation:blink 1.2s ease-in-out infinite;}
-    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* FLIGHT BAR */
-    .flight-bar{z-index:999;height:28px;background:var(--blue);display:flex;align-items:center;flex-shrink:0;cursor:pointer;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent;}
-    .flight-bar .ticker-track{display:flex;white-space:nowrap;animation:tickerMove 22s linear infinite;position:absolute;left:0;}
-    .ticker-seg{font-family:'DM Mono',monospace;font-size:0.48rem;letter-spacing:0.14em;color:rgba(255,255,255,0.85);padding-right:48px;}
-    @keyframes tickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-    .flight-bar .eta-display{display:none;width:100%;padding:0 12px;align-items:center;justify-content:space-between;gap:8px;}
-    .flight-bar.has-flight .ticker-track{display:none;}
-    .flight-bar.has-flight .eta-display{display:flex;}
-    .eta-flight-num{font-family:'DM Mono',monospace;font-size:0.52rem;font-weight:500;color:var(--white);letter-spacing:0.08em;flex-shrink:0;}
-    .eta-route{font-family:'DM Mono',monospace;font-size:0.5rem;color:rgba(255,255,255,0.75);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .eta-time{font-family:'DM Mono',monospace;font-size:0.52rem;font-weight:500;color:var(--white);flex-shrink:0;display:flex;align-items:center;gap:5px;}
-    .eta-dot{width:5px;height:5px;border-radius:50%;background:#7fffb2;animation:blink 1.5s ease-in-out infinite;flex-shrink:0;}
-    .eta-countdown{background:rgba(0,0,0,0.25);border-radius:100px;padding:1px 7px;font-size:0.46rem;color:rgba(255,255,255,0.85);}
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--black);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
 
-    /* OVERFLY BAR */
-    .overfly-bar{z-index:998;height:22px;background:var(--black);display:flex;align-items:center;justify-content:center;flex-shrink:0;gap:8px;border-bottom:1px solid #1e1e1e;}
-    .overfly-text{font-family:'DM Mono',monospace;font-size:0.46rem;letter-spacing:0.12em;color:#555;}
-    .overfly-country{font-family:'DM Mono',monospace;font-size:0.46rem;letter-spacing:0.1em;color:var(--blue);}
+    /* VIEWS */
+    .view { display: none; flex-direction: column; min-height: 100dvh; }
+    .view.active { display: flex; animation: fadeUp 0.22s ease; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
-    /* MAP */
-    #map{flex:1;z-index:1;min-height:0;}
-    .leaflet-tile-pane{filter:grayscale(1) contrast(1.1) brightness(1.08);}
-    .leaflet-container{background:#e8e8e3;}
+    /* ── ONBOARDING ── */
+    #view-onboard { background: var(--white); }
 
-    /* MARKER */
-    .plane-marker{width:48px;height:48px;position:relative;display:flex;align-items:center;justify-content:center;}
-    .p-ring{position:absolute;width:48px;height:48px;border-radius:50%;border:2px solid var(--blue);animation:rp 2.2s ease-out infinite;}
-    .p-ring-2{animation-delay:0.8s;}
-    @keyframes rp{0%{transform:scale(0.5);opacity:1}100%{transform:scale(1.9);opacity:0}}
-    .p-dot{width:22px;height:22px;border-radius:50%;background:var(--white);border:3px solid var(--black);box-shadow:0 0 0 3px var(--blue),3px 3px 0 rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;position:relative;z-index:2;}
+    .ob-progress {
+      display: flex;
+      gap: 6px;
+      padding: 20px 24px 0;
+    }
+    .ob-prog-bar {
+      height: 4px;
+      flex: 1;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+    .ob-prog-bar.done { background: var(--primary); }
 
-    /* SKY NOTE MARKER */
-    .note-pin{cursor:pointer;-webkit-tap-highlight-color:transparent;}
-    .note-pin-inner{background:var(--white);border:2.5px solid var(--black);border-radius:8px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:0.45rem;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:2px 2px 0 var(--black);position:relative;}
-    .note-pin-inner::after{content:'';position:absolute;bottom:-7px;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--black);}
+    .ob-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 32px 24px 28px;
+    }
 
-    /* MAP CONTROLS */
-    .map-controls{position:absolute;bottom:82px;right:12px;z-index:1000;display:flex;flex-direction:column;gap:5px;}
-    .ctrl-btn{width:38px;height:38px;border-radius:8px;border:2.5px solid var(--black);background:var(--white);color:var(--black);font-family:'Unbounded',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
-    .ctrl-btn:active{background:var(--blue);color:var(--white);box-shadow:none;transform:translate(3px,3px);}
+    .ob-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+    .ob-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+    .ob-sub {
+      font-size: 0.88rem;
+      color: var(--gray);
+      line-height: 1.55;
+      margin-bottom: 28px;
+    }
 
-    /* BOTTOM TOOL ROW */
-    .tool-row{position:absolute;bottom:82px;left:12px;z-index:1000;display:flex;gap:7px;}
-    .tool-btn{display:flex;align-items:center;gap:6px;padding:9px 12px;border-radius:8px;border:2.5px solid var(--black);background:var(--white);color:var(--black);font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;letter-spacing:0.06em;cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;white-space:nowrap;}
-    .tool-btn:active{box-shadow:none;transform:translate(3px,3px);}
-    .tool-btn.blue{background:var(--blue);color:var(--white);border-color:var(--black);}
-    .tool-btn.blue:active{background:var(--blue-dark);}
+    .skin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: auto;
+    }
+    .skin-card {
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      background: var(--white);
+      text-align: left;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .skin-card:last-child { grid-column: 1 / -1; }
+    .skin-card.sel { border-color: var(--primary); background: var(--primary-light); }
+    .skin-card .sc-emoji { font-size: 1.6rem; margin-bottom: 8px; display: block; }
+    .skin-card .sc-name { font-size: 0.9rem; font-weight: 700; margin-bottom: 3px; }
+    .skin-card .sc-desc { font-size: 0.72rem; color: var(--gray); line-height: 1.4; }
 
-    /* CACHE BTN */
-    .cache-btn{position:absolute;bottom:128px;left:12px;z-index:1000;display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:8px;border:2.5px solid var(--black);background:var(--white);color:var(--black);font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;letter-spacing:0.08em;cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
-    .cache-btn:active{box-shadow:none;transform:translate(3px,3px);}
-    .cache-btn.loading{background:var(--black);color:var(--blue);box-shadow:none;}
-    .spin{display:inline-block;animation:spin 0.75s linear infinite;}
-    @keyframes spin{to{transform:rotate(360deg)}}
+    .concern-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: auto;
+    }
+    .concern-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 100px;
+      border: 2px solid var(--border);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--white);
+      transition: all 0.15s;
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .concern-chip.sel { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
 
-    /* TOAST */
-    .toast{position:absolute;top:112px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:2000;background:var(--black);color:var(--white);border:2.5px solid var(--black);border-radius:100px;padding:7px 16px;font-family:'DM Mono',monospace;font-size:0.6rem;letter-spacing:0.06em;white-space:nowrap;opacity:0;pointer-events:none;transition:all 0.28s cubic-bezier(0.34,1.56,0.64,1);box-shadow:3px 3px 0 rgba(0,0,0,0.12);}
-    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-    .toast.success{background:var(--success);color:var(--black);border-color:var(--black);}
-    .toast.error{background:var(--danger);color:var(--white);}
+    .ob-footer { padding-top: 20px; display: flex; flex-direction: column; gap: 8px; }
 
-    /* INFO BAR */
-    .info-panel{z-index:1000;background:var(--black);display:grid;grid-template-columns:repeat(3,1fr);flex-shrink:0;}
-    .info-item{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 6px;border-right:1px solid #1e1e1e;gap:2px;}
-    .info-item:last-child{border-right:none;}
-    .info-label{font-family:'DM Mono',monospace;font-size:0.42rem;letter-spacing:0.18em;color:#444;text-transform:uppercase;}
-    .info-value{font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:500;color:var(--blue);letter-spacing:0.02em;}
-    @keyframes flicker{0%,100%{opacity:1}40%{opacity:0.2}}
-    .info-value.updating{animation:flicker 0.22s ease;}
+    /* ── BUTTONS ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      border: none;
+      font-family: var(--font);
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary { background: var(--primary); color: var(--white); }
+    .btn-primary:active { background: var(--primary-dark); transform: scale(0.99); }
+    .btn-primary:disabled { background: var(--border); color: var(--gray); cursor: not-allowed; transform: none; }
+    .btn-ghost { background: transparent; color: var(--gray); font-size: 0.82rem; }
 
-    /* OVERLAY */
-    .sheet-overlay{position:fixed;inset:0;z-index:2999;background:rgba(0,0,0,0.4);opacity:0;pointer-events:none;transition:opacity 0.3s;}
-    .sheet-overlay.show{opacity:1;pointer-events:all;}
+    /* ── HOME ── */
+    #view-home { background: var(--white); }
 
-    /* SHARED SHEET BASE */
-    .sheet{position:fixed;bottom:0;left:0;right:0;z-index:3000;background:var(--white);border-top:3px solid var(--black);border-radius:20px 20px 0 0;transform:translateY(100%);transition:transform 0.36s cubic-bezier(0.32,0.72,0,1);box-shadow:0 -6px 0 var(--black);display:flex;flex-direction:column;max-height:88dvh;}
-    .sheet.open{transform:translateY(0);}
-    .sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:10px auto 0;flex-shrink:0;}
-    .sheet-hd{padding:12px 16px 10px;flex-shrink:0;border-bottom:2px solid var(--black);}
-    .sheet-title{font-size:0.68rem;font-weight:900;letter-spacing:-0.02em;margin-bottom:10px;}
-    .sheet-body{overflow-y:auto;flex:1;padding:14px 16px 28px;}
+    .home-header {
+      padding: 20px 20px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .home-logo { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.03em; }
+    .home-logo span { color: var(--primary); }
 
-    /* INPUT STYLES */
-    .inp-row{display:flex;gap:8px;margin-bottom:8px;}
-    .inp-field{display:flex;flex-direction:column;gap:4px;flex:1;}
-    .inp-label{font-family:'DM Mono',monospace;font-size:0.42rem;letter-spacing:0.14em;color:var(--gray);text-transform:uppercase;}
-    .inp{padding:9px 11px;border:2.5px solid var(--black);border-radius:8px;font-family:'DM Mono',monospace;font-size:0.7rem;background:var(--bg);color:var(--black);outline:none;box-shadow:2px 2px 0 var(--black);width:100%;}
-    .inp:focus{border-color:var(--blue);box-shadow:2px 2px 0 var(--blue);}
-    .inp::placeholder{color:var(--border);}
-    .btn-row{display:flex;gap:8px;margin-top:12px;}
-    .btn-primary{flex:1;padding:11px;border-radius:8px;border:2.5px solid var(--black);background:var(--blue);color:var(--white);font-family:'Unbounded',sans-serif;font-size:0.6rem;font-weight:700;cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
-    .btn-primary:active{box-shadow:none;transform:translate(3px,3px);}
-    .btn-sec{padding:11px 14px;border-radius:8px;border:2.5px solid var(--black);background:var(--white);color:var(--black);font-family:'DM Mono',monospace;font-size:0.55rem;cursor:pointer;box-shadow:3px 3px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
-    .btn-sec:active{box-shadow:none;transform:translate(3px,3px);}
-    .hint{font-family:'DM Mono',monospace;font-size:0.46rem;color:var(--gray);letter-spacing:0.05em;margin-top:10px;line-height:1.6;}
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--gray-light);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    /* DESTINATION SHEET */
-    .weather-block{background:var(--black);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
-    .weather-left{display:flex;flex-direction:column;gap:3px;}
-    .weather-city{font-size:0.6rem;font-weight:900;color:var(--white);}
-    .weather-temp{font-family:'DM Mono',monospace;font-size:1.6rem;font-weight:500;color:var(--blue);line-height:1;}
-    .weather-desc{font-family:'DM Mono',monospace;font-size:0.5rem;letter-spacing:0.1em;color:#555;text-transform:uppercase;}
-    .weather-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
-    .weather-icon{font-size:2.4rem;line-height:1;}
-    .weather-meta{font-family:'DM Mono',monospace;font-size:0.48rem;letter-spacing:0.08em;color:#555;text-align:right;}
-    .sec-head{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
-    .sec-label{font-size:0.55rem;font-weight:900;letter-spacing:0.04em;text-transform:uppercase;}
-    .sec-tag{font-family:'DM Mono',monospace;font-size:0.42rem;padding:2px 7px;border-radius:100px;background:var(--blue-pale);color:var(--blue);letter-spacing:0.1em;}
-    .places-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
-    .place-card{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;-webkit-tap-highlight-color:transparent;}
-    .place-card:active{border-color:var(--blue);background:var(--blue-pale);}
-    .place-emoji{font-size:1.4rem;flex-shrink:0;width:36px;text-align:center;}
-    .place-info{flex:1;min-width:0;}
-    .place-name{font-size:0.6rem;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .place-meta{font-family:'DM Mono',monospace;font-size:0.48rem;color:var(--gray);letter-spacing:0.04em;margin-top:2px;}
-    .place-tag{font-family:'DM Mono',monospace;font-size:0.42rem;padding:3px 8px;border-radius:100px;border:1.5px solid var(--border);color:var(--gray);white-space:nowrap;flex-shrink:0;}
-    .trend-grid{display:flex;flex-wrap:wrap;gap:7px;}
-    .trend-chip{display:flex;align-items:center;gap:5px;padding:7px 11px;border-radius:100px;border:2px solid var(--black);background:var(--white);font-family:'DM Mono',monospace;font-size:0.52rem;cursor:pointer;box-shadow:2px 2px 0 var(--black);transition:all 0.1s;-webkit-tap-highlight-color:transparent;}
-    .trend-chip:active{box-shadow:none;transform:translate(2px,2px);background:var(--blue);color:var(--white);border-color:var(--blue);}
-    .trend-chip.hot{border-color:var(--blue);background:var(--blue-pale);color:var(--blue);}
-    .skeleton{background:linear-gradient(90deg,var(--gray-light) 25%,var(--border) 50%,var(--gray-light) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;}
-    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-    .skel-weather{height:80px;border-radius:12px;margin-bottom:14px;}
-    .skel-card{height:58px;border-radius:10px;margin-bottom:8px;}
+    .home-hero { padding: 28px 20px 20px; }
+    .home-eyebrow { font-size: 0.78rem; color: var(--gray); font-weight: 500; margin-bottom: 4px; }
+    .home-headline { font-size: 1.5rem; font-weight: 800; line-height: 1.3; }
+    .profile-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 12px;
+      padding: 5px 12px;
+      border-radius: 100px;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
 
-    /* TIMEZONE SHEET */
-    .tz-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-    .tz-card{background:var(--black);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:4px;}
-    .tz-label{font-family:'DM Mono',monospace;font-size:0.42rem;letter-spacing:0.14em;color:#555;text-transform:uppercase;}
-    .tz-city{font-size:0.55rem;font-weight:900;color:var(--white);}
-    .tz-time{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:500;color:var(--blue);line-height:1;margin-top:2px;}
-    .tz-date{font-family:'DM Mono',monospace;font-size:0.44rem;color:#555;letter-spacing:0.06em;margin-top:2px;}
-    .tz-diff{font-family:'DM Mono',monospace;font-size:0.44rem;padding:2px 8px;border-radius:100px;background:var(--blue-pale);color:var(--blue);display:inline-block;margin-top:4px;}
+    .search-wrap { margin: 0 20px; position: relative; }
+    .search-inp {
+      width: 100%;
+      padding: 14px 48px 14px 44px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      background: var(--bg);
+      color: var(--black);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .search-inp:focus { border-color: var(--primary); background: var(--white); }
+    .search-inp::placeholder { color: #A1A1AA; }
+    .search-icon-l {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--gray); pointer-events: none; font-size: 1.1rem;
+    }
+    .search-go {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 34px; height: 34px; border-radius: 10px;
+      background: var(--primary); border: none; color: var(--white);
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .search-go:active { background: var(--primary-dark); }
 
-    /* SLEEP SHEET */
-    .sleep-card{background:var(--black);border-radius:12px;padding:16px;margin-bottom:12px;}
-    .sleep-head{font-size:0.58rem;font-weight:900;color:var(--white);margin-bottom:10px;}
-    .sleep-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-top:1px solid #1e1e1e;}
-    .sleep-emoji{font-size:1.2rem;flex-shrink:0;margin-top:2px;}
-    .sleep-info{flex:1;}
-    .sleep-title{font-family:'DM Mono',monospace;font-size:0.55rem;font-weight:500;color:var(--blue);}
-    .sleep-desc{font-family:'DM Mono',monospace;font-size:0.46rem;color:#555;letter-spacing:0.04em;margin-top:3px;line-height:1.5;}
+    .home-suggestions { padding: 20px 20px 24px; }
+    .sugg-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gray);
+      margin-bottom: 10px;
+    }
+    .sugg-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .sugg-chip {
+      padding: 8px 14px;
+      border-radius: 100px;
+      background: var(--gray-light);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s;
+    }
+    .sugg-chip:active { background: var(--primary-light); color: var(--primary); }
 
-    /* SKY NOTES SHEET */
-    .note-compose{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
-    .note-textarea{padding:10px 12px;border:2.5px solid var(--black);border-radius:8px;font-family:'DM Mono',monospace;font-size:0.68rem;background:var(--bg);color:var(--black);outline:none;box-shadow:2px 2px 0 var(--black);resize:none;height:72px;line-height:1.5;}
-    .note-textarea:focus{border-color:var(--blue);box-shadow:2px 2px 0 var(--blue);}
-    .note-meta-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-    .note-char-count{font-family:'DM Mono',monospace;font-size:0.44rem;color:var(--gray);}
-    .notes-list{display:flex;flex-direction:column;gap:8px;}
-    .note-item{padding:11px 13px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all 0.1s;}
-    .note-item:active{border-color:var(--blue);background:var(--blue-pale);}
-    .note-item-text{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--black);line-height:1.5;margin-bottom:6px;}
-    .note-item-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;}
-    .note-item-loc{font-family:'DM Mono',monospace;font-size:0.44rem;color:var(--gray);letter-spacing:0.04em;}
-    .note-item-time{font-family:'DM Mono',monospace;font-size:0.42rem;color:var(--border);letter-spacing:0.04em;}
-    .note-empty{font-family:'DM Mono',monospace;font-size:0.58rem;color:var(--gray);text-align:center;padding:20px 0;line-height:1.8;}
+    /* ── RESULTS ── */
+    #view-results { background: var(--bg); }
 
-    /* FLIGHT SHEET */
-    .flight-sheet{z-index:3100;}
+    .nav-bar {
+      background: var(--white);
+      padding: 14px 14px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .back-btn {
+      width: 36px; height: 36px;
+      border-radius: 10px; background: var(--gray-light); border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-inp {
+      flex: 1; padding: 9px 12px;
+      border-radius: 10px; border: 1.5px solid var(--border);
+      font-family: var(--font); font-size: 0.88rem;
+      background: var(--bg); outline: none; color: var(--black);
+    }
+    .nav-inp:focus { border-color: var(--primary); background: var(--white); }
+    .nav-go {
+      width: 36px; height: 36px;
+      border-radius: 10px; background: var(--primary); border: none;
+      color: var(--white); font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font);
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    /* Leaflet */
-    .leaflet-control-zoom{display:none !important;}
-    .leaflet-attribution-flag{display:none !important;}
-    .leaflet-control-attribution{font-size:0.44rem !important;background:rgba(245,245,240,0.85) !important;color:var(--gray) !important;border-radius:4px !important;}
-    .leaflet-control-attribution a{color:var(--gray) !important;}
+    .results-meta { padding: 12px 16px 6px; font-size: 0.78rem; color: var(--gray); font-weight: 500; }
+    .results-list { padding: 4px 14px 28px; display: flex; flex-direction: column; gap: 10px; }
+
+    .product-card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      transition: border-color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .product-card:active { border-color: var(--primary); }
+
+    .prod-img {
+      width: 64px; height: 64px;
+      border-radius: 10px; object-fit: cover;
+      background: var(--gray-light); flex-shrink: 0;
+    }
+    .prod-img-ph {
+      width: 64px; height: 64px;
+      border-radius: 10px; background: var(--gray-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.7rem; flex-shrink: 0;
+    }
+    .prod-info { flex: 1; min-width: 0; }
+    .prod-brand {
+      font-size: 0.68rem; font-weight: 600; color: var(--gray);
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;
+    }
+    .prod-name { font-size: 0.88rem; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+    .prod-chevron { color: var(--border); font-size: 1.1rem; flex-shrink: 0; }
+
+    /* grade badge */
+    .gbadge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 100px;
+      font-size: 0.7rem; font-weight: 700;
+    }
+    .g-A { background: var(--success-bg); color: var(--success); }
+    .g-B { background: var(--info-bg); color: var(--info); }
+    .g-C { background: var(--warning-bg); color: var(--warning); }
+    .g-D { background: var(--danger-bg); color: var(--danger); }
+    .g-x { background: var(--gray-light); color: var(--gray); }
+
+    /* state boxes */
+    .state-box {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 52px 24px; text-align: center; gap: 10px;
+    }
+    .state-emoji { font-size: 2.4rem; }
+    .state-title { font-size: 1rem; font-weight: 700; }
+    .state-sub { font-size: 0.82rem; color: var(--gray); line-height: 1.5; }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--border); border-top-color: var(--primary);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── PRODUCT DETAIL ── */
+    #view-product { background: var(--bg); }
+
+    .product-hero {
+      background: var(--white);
+      padding: 20px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-img {
+      width: 80px; height: 80px;
+      border-radius: 12px; object-fit: cover;
+      background: var(--gray-light); flex-shrink: 0;
+    }
+    .hero-img-ph {
+      width: 80px; height: 80px;
+      border-radius: 12px; background: var(--gray-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; flex-shrink: 0;
+    }
+    .hero-info { flex: 1; }
+    .hero-brand {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--gray); margin-bottom: 4px;
+    }
+    .hero-name { font-size: 1rem; font-weight: 800; line-height: 1.3; margin-bottom: 10px; }
+
+    .section {
+      background: var(--white);
+      margin: 10px 0;
+      padding: 16px 18px;
+    }
+    .section:first-of-type { margin-top: 10px; }
+
+    .sec-title {
+      font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.09em;
+      color: var(--gray); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sec-count {
+      background: var(--gray-light); color: var(--gray);
+      font-size: 0.65rem; padding: 2px 7px;
+      border-radius: 100px; font-weight: 600;
+    }
+
+    /* score bar */
+    .score-row {
+      display: flex; justify-content: space-between;
+      font-size: 0.72rem; color: var(--gray); font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .score-track {
+      height: 7px; border-radius: 4px;
+      background: var(--border); overflow: hidden;
+    }
+    .score-fill { height: 100%; border-radius: 4px; transition: width 0.7s ease; }
+    .sf-hi { background: var(--success); }
+    .sf-md { background: #F59E0B; }
+    .sf-lo { background: var(--danger); }
+
+    /* flags */
+    .flag-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0; border-top: 1px solid var(--border);
+    }
+    .flag-item:first-child { border-top: none; padding-top: 0; }
+    .flag-ic {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.82rem; flex-shrink: 0;
+    }
+    .fi-hi { background: var(--danger-bg); }
+    .fi-md { background: var(--warning-bg); }
+    .fi-lo { background: var(--gray-light); }
+    .flag-name { font-size: 0.85rem; font-weight: 700; text-transform: capitalize; margin-bottom: 2px; }
+    .flag-sub { font-size: 0.7rem; color: var(--gray); }
+
+    /* benefits */
+    .benefit-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .benefit-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 12px; border-radius: 100px;
+      background: var(--success-bg); color: var(--success);
+      font-size: 0.76rem; font-weight: 600;
+    }
+
+    /* buy links */
+    .buy-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-top: 1px solid var(--border);
+      text-decoration: none; color: var(--black);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .buy-link:first-child { border-top: none; padding-top: 0; }
+    .buy-ic {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--gray-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .buy-name { font-size: 0.88rem; font-weight: 700; flex: 1; }
+    .buy-arrow { color: var(--gray); font-size: 0.9rem; }
+
+    /* ingredients toggle */
+    .ing-toggle {
+      font-size: 0.8rem; font-weight: 600; color: var(--primary);
+      background: none; border: none; padding: 0; cursor: pointer;
+      font-family: var(--font); margin-bottom: 8px; display: block;
+    }
+    .ing-text {
+      font-size: 0.76rem; color: var(--gray); line-height: 1.75;
+      display: none;
+    }
+    .ing-text.open { display: block; }
+
+    .empty-note { font-size: 0.82rem; color: var(--gray); font-style: italic; }
+
+    /* toast */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--black); color: var(--white);
+      padding: 10px 20px; border-radius: 100px;
+      font-size: 0.8rem; font-weight: 600; white-space: nowrap;
+      opacity: 0; pointer-events: none;
+      transition: all 0.28s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 9999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<header>
-  <div class="logo-wrap">
-    <div class="logo-badge">✈ GPS</div>
-    <div class="logo-main">where<span class="hi">you</span>at</div>
+<!-- ══ ONBOARDING ══ -->
+<div id="view-onboard" class="view active">
+  <div class="ob-progress">
+    <div class="ob-prog-bar" id="ob-p1"></div>
+    <div class="ob-prog-bar" id="ob-p2"></div>
   </div>
-  <div class="status-bar">
-    <div class="status-pill" id="gps-status"><div class="status-dot"></div><span>GPS</span></div>
-    <div class="status-pill" id="cache-status"><div class="status-dot"></div><span>CACHE</span></div>
-  </div>
-</header>
 
-<!-- FLIGHT ETA BAR -->
-<div class="flight-bar" id="flight-bar">
-  <div class="ticker-track">
-    <span class="ticker-seg">✦ OFFLINE GPS TRACKER ✦ TAP TO ADD FLIGHT ✦ NO WIFI NEEDED ✦ WORKS AT 35,000FT ✦</span>
-    <span class="ticker-seg">✦ OFFLINE GPS TRACKER ✦ TAP TO ADD FLIGHT ✦ NO WIFI NEEDED ✦ WORKS AT 35,000FT ✦</span>
+  <!-- Step 1: Skin Type -->
+  <div class="ob-content" id="ob-s1">
+    <div class="ob-tag">Step 1 of 2</div>
+    <h1 class="ob-title">What's your skin type?</h1>
+    <p class="ob-sub">We'll flag ingredients that don't work for you and highlight ones that do.</p>
+    <div class="skin-grid" id="skin-grid">
+      <div class="skin-card" data-t="oily">
+        <span class="sc-emoji">✨</span>
+        <div class="sc-name">Oily</div>
+        <div class="sc-desc">Shiny, large pores, breakout-prone</div>
+      </div>
+      <div class="skin-card" data-t="dry">
+        <span class="sc-emoji">🌵</span>
+        <div class="sc-name">Dry</div>
+        <div class="sc-desc">Tight, flaky, rough texture</div>
+      </div>
+      <div class="skin-card" data-t="combination">
+        <span class="sc-emoji">☯️</span>
+        <div class="sc-name">Combination</div>
+        <div class="sc-desc">Oily T-zone, dry or normal cheeks</div>
+      </div>
+      <div class="skin-card" data-t="sensitive">
+        <span class="sc-emoji">🌸</span>
+        <div class="sc-name">Sensitive</div>
+        <div class="sc-desc">Easily irritated, reactive to products</div>
+      </div>
+      <div class="skin-card" data-t="normal">
+        <span class="sc-emoji">🍃</span>
+        <div class="sc-name">Normal</div>
+        <div class="sc-desc">Balanced, minimal concerns</div>
+      </div>
+    </div>
+    <div class="ob-footer">
+      <button class="btn btn-primary" id="ob-next" disabled>Continue →</button>
+    </div>
   </div>
-  <div class="eta-display">
-    <div class="eta-flight-num" id="eta-fn">—</div>
-    <div class="eta-route" id="eta-route">—</div>
-    <div class="eta-time"><div class="eta-dot"></div><span id="eta-val">—</span><span class="eta-countdown" id="eta-cd"></span></div>
+
+  <!-- Step 2: Concerns -->
+  <div class="ob-content" id="ob-s2" style="display:none;">
+    <div class="ob-tag">Step 2 of 2</div>
+    <h1 class="ob-title">Any skin concerns?</h1>
+    <p class="ob-sub">Select all that apply — we'll personalize your ingredient analysis.</p>
+    <div class="concern-wrap">
+      <button class="concern-chip" data-c="acne">🔴 Acne &amp; Breakouts</button>
+      <button class="concern-chip" data-c="dry">💧 Dryness</button>
+      <button class="concern-chip" data-c="aging">🕐 Anti-Aging</button>
+      <button class="concern-chip" data-c="hyperpigmentation">🌑 Dark Spots</button>
+      <button class="concern-chip" data-c="redness">😊 Redness</button>
+      <button class="concern-chip" data-c="none">✨ No concerns</button>
+    </div>
+    <div class="ob-footer">
+      <button class="btn btn-primary" id="ob-finish">Get Started ✓</button>
+      <button class="btn btn-ghost" id="ob-back">← Back</button>
+    </div>
   </div>
 </div>
 
-<!-- OVERFLY BAR -->
-<div class="overfly-bar">
-  <span class="overfly-text">CURRENTLY OVER</span>
-  <span class="overfly-country" id="overfly-country">— LOCATING —</span>
+<!-- ══ HOME ══ -->
+<div id="view-home" class="view">
+  <div class="home-header">
+    <div class="home-logo">skin<span>ly</span></div>
+    <button class="icon-btn" id="profile-btn" title="Edit profile">👤</button>
+  </div>
+  <div class="home-hero">
+    <div class="home-eyebrow">Personalized for you</div>
+    <h1 class="home-headline">Find products<br/>made for your skin</h1>
+    <div class="profile-tag" id="profile-tag">Loading...</div>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon-l">🔍</span>
+    <input class="search-inp" id="home-inp" type="text"
+      placeholder="Product name or brand..."
+      autocomplete="off" autocorrect="off" spellcheck="false"/>
+    <button class="search-go" id="home-go">→</button>
+  </div>
+  <div class="home-suggestions">
+    <div class="sugg-label">Popular searches</div>
+    <div class="sugg-chips">
+      <button class="sugg-chip" data-q="CeraVe moisturizer">CeraVe</button>
+      <button class="sugg-chip" data-q="The Ordinary niacinamide">The Ordinary</button>
+      <button class="sugg-chip" data-q="La Roche-Posay sunscreen">La Roche-Posay</button>
+      <button class="sugg-chip" data-q="COSRX snail mucin">COSRX</button>
+      <button class="sugg-chip" data-q="Neutrogena hydro boost">Neutrogena</button>
+      <button class="sugg-chip" data-q="Innisfree green tea serum">Innisfree</button>
+      <button class="sugg-chip" data-q="Laneige water sleeping mask">Laneige</button>
+    </div>
+  </div>
 </div>
 
-<!-- MAP -->
-<div id="map"></div>
-
-<!-- MAP CONTROLS (right) -->
-<div class="map-controls">
-  <button class="ctrl-btn" id="center-btn">⊕</button>
-  <button class="ctrl-btn" id="zoom-in-btn">+</button>
-  <button class="ctrl-btn" id="zoom-out-btn">−</button>
+<!-- ══ RESULTS ══ -->
+<div id="view-results" class="view">
+  <div class="nav-bar">
+    <button class="back-btn" id="res-back">←</button>
+    <input class="nav-inp" id="res-inp" type="text" placeholder="Search..." autocomplete="off"/>
+    <button class="nav-go" id="res-go">→</button>
+  </div>
+  <div class="results-meta" id="res-meta"></div>
+  <div class="results-list" id="res-list"></div>
 </div>
 
-<!-- TOOL ROW (bottom left) -->
-<div class="tool-row">
-  <button class="tool-btn blue" id="dest-btn">📍 DEST</button>
-  <button class="tool-btn" id="tz-btn">🕐 TIME</button>
-  <button class="tool-btn" id="sleep-btn">💤 SLEEP</button>
-  <button class="tool-btn" id="notes-btn">✍ SKY</button>
+<!-- ══ PRODUCT DETAIL ══ -->
+<div id="view-product" class="view">
+  <div class="nav-bar">
+    <button class="back-btn" id="prod-back">←</button>
+    <div id="prod-nav-title" style="flex:1;font-size:0.85rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+  </div>
+  <div id="prod-content"></div>
 </div>
-
-<!-- CACHE BTN -->
-<button class="cache-btn" id="cache-btn">
-  <span id="cache-icon">↓</span>
-  <span id="cache-label">SAVE MAP</span>
-</button>
 
 <div class="toast" id="toast"></div>
 
-<!-- GPS INFO BAR -->
-<div class="info-panel">
-  <div class="info-item"><div class="info-label">LAT</div><div class="info-value" id="val-lat">——</div></div>
-  <div class="info-item"><div class="info-label">LNG</div><div class="info-value" id="val-lon">——</div></div>
-  <div class="info-item"><div class="info-label">ACC</div><div class="info-value" id="val-acc">——</div></div>
-</div>
+<script>
+// ── PROFILE ──
+const PKEY = 'skinly-profile-v1';
+let profile = null;
+try { profile = JSON.parse(localStorage.getItem(PKEY)); } catch {}
 
-<!-- OVERLAY -->
-<div class="sheet-overlay" id="sheet-overlay"></div>
+// ── INGREDIENT DB ──
+// flag: 'comedogenic' | 'irritant' | 'allergen' | 'beneficial'
+// severity: 1-5 (for hazardous flags)
+// bad_for / good_for: skin types and concerns
+const DB = {
+  // Comedogenic
+  'isopropyl myristate':       { flag:'comedogenic', severity:5, bad_for:['acne','oily'] },
+  'isopropyl palmitate':       { flag:'comedogenic', severity:4, bad_for:['acne','oily'] },
+  'myristyl myristate':        { flag:'comedogenic', severity:5, bad_for:['acne'] },
+  'isopropyl isostearate':     { flag:'comedogenic', severity:4, bad_for:['acne','oily'] },
+  'butyl stearate':            { flag:'comedogenic', severity:3, bad_for:['acne'] },
+  'wheat germ oil':            { flag:'comedogenic', severity:5, bad_for:['acne'] },
+  'acetylated lanolin':        { flag:'comedogenic', severity:4, bad_for:['acne'] },
+  'cocoa butter':              { flag:'comedogenic', severity:4, bad_for:['acne'] },
+  'coconut oil':               { flag:'comedogenic', severity:4, bad_for:['acne','oily'] },
+  'flaxseed oil':              { flag:'comedogenic', severity:4, bad_for:['acne'] },
+  'linseed oil':               { flag:'comedogenic', severity:4, bad_for:['acne'] },
+  'soybean oil':               { flag:'comedogenic', severity:3, bad_for:['acne'] },
+  'sesame oil':                { flag:'comedogenic', severity:3, bad_for:['acne'] },
+  'cetyl acetate':             { flag:'comedogenic', severity:3, bad_for:['acne'] },
+  // Irritants
+  'fragrance':                 { flag:'irritant', severity:4, bad_for:['sensitive','redness'] },
+  'parfum':                    { flag:'irritant', severity:4, bad_for:['sensitive','redness'] },
+  'alcohol denat':             { flag:'irritant', severity:4, bad_for:['sensitive','dry'] },
+  'denatured alcohol':         { flag:'irritant', severity:4, bad_for:['sensitive','dry'] },
+  'sd alcohol':                { flag:'irritant', severity:3, bad_for:['sensitive','dry'] },
+  'sodium lauryl sulfate':     { flag:'irritant', severity:4, bad_for:['sensitive','dry'] },
+  'sodium laureth sulfate':    { flag:'irritant', severity:2, bad_for:['sensitive'] },
+  'methylisothiazolinone':     { flag:'irritant', severity:5, bad_for:['sensitive','redness'] },
+  'methylchloroisothiazolinone': { flag:'irritant', severity:5, bad_for:['sensitive'] },
+  'dmdm hydantoin':            { flag:'irritant', severity:3, bad_for:['sensitive'], note:'Formaldehyde releaser' },
+  'imidazolidinyl urea':       { flag:'irritant', severity:3, bad_for:['sensitive'], note:'Formaldehyde releaser' },
+  'diazolidinyl urea':         { flag:'irritant', severity:3, bad_for:['sensitive'], note:'Formaldehyde releaser' },
+  'benzalkonium chloride':     { flag:'irritant', severity:3, bad_for:['sensitive','dry'] },
+  // Allergens (EU 26)
+  'limonene':                  { flag:'allergen', severity:3, bad_for:['sensitive','redness'] },
+  'linalool':                  { flag:'allergen', severity:3, bad_for:['sensitive','redness'] },
+  'citronellol':               { flag:'allergen', severity:2, bad_for:['sensitive'] },
+  'eugenol':                   { flag:'allergen', severity:3, bad_for:['sensitive'] },
+  'geraniol':                  { flag:'allergen', severity:2, bad_for:['sensitive'] },
+  'cinnamyl alcohol':          { flag:'allergen', severity:3, bad_for:['sensitive'] },
+  'benzyl benzoate':           { flag:'allergen', severity:2, bad_for:['sensitive'] },
+  'isoeugenol':                { flag:'allergen', severity:3, bad_for:['sensitive'] },
+  'hydroxycitronellal':        { flag:'allergen', severity:2, bad_for:['sensitive'] },
+  'amyl cinnamal':             { flag:'allergen', severity:3, bad_for:['sensitive'] },
+  // Beneficial
+  'hyaluronic acid':           { flag:'beneficial', good_for:['dry','all'] },
+  'sodium hyaluronate':        { flag:'beneficial', good_for:['dry','all'] },
+  'glycerin':                  { flag:'beneficial', good_for:['dry','all'] },
+  'glycerol':                  { flag:'beneficial', good_for:['dry','all'] },
+  'niacinamide':               { flag:'beneficial', good_for:['acne','oily','hyperpigmentation','redness'] },
+  'retinol':                   { flag:'beneficial', good_for:['aging','acne'] },
+  'retinal':                   { flag:'beneficial', good_for:['aging','acne'] },
+  'retinaldehyde':             { flag:'beneficial', good_for:['aging','acne'] },
+  'ascorbic acid':             { flag:'beneficial', good_for:['hyperpigmentation','aging'] },
+  'l-ascorbic acid':           { flag:'beneficial', good_for:['hyperpigmentation','aging'] },
+  'vitamin c':                 { flag:'beneficial', good_for:['hyperpigmentation','aging'] },
+  'ceramide':                  { flag:'beneficial', good_for:['dry','sensitive'] },
+  'ceramide np':               { flag:'beneficial', good_for:['dry','sensitive'] },
+  'ceramide ap':               { flag:'beneficial', good_for:['dry','sensitive'] },
+  'ceramide eop':              { flag:'beneficial', good_for:['dry','sensitive'] },
+  'centella asiatica':         { flag:'beneficial', good_for:['sensitive','acne','redness'] },
+  'centella asiatica extract': { flag:'beneficial', good_for:['sensitive','acne','redness'] },
+  'madecassoside':             { flag:'beneficial', good_for:['sensitive','redness'] },
+  'asiaticoside':              { flag:'beneficial', good_for:['sensitive','redness'] },
+  'aloe vera':                 { flag:'beneficial', good_for:['sensitive','dry','redness'] },
+  'aloe barbadensis':          { flag:'beneficial', good_for:['sensitive','dry','redness'] },
+  'salicylic acid':            { flag:'beneficial', good_for:['acne','oily'] },
+  'zinc oxide':                { flag:'beneficial', good_for:['acne','sensitive'] },
+  'allantoin':                 { flag:'beneficial', good_for:['sensitive','dry'] },
+  'panthenol':                 { flag:'beneficial', good_for:['dry','sensitive'] },
+  'squalane':                  { flag:'beneficial', good_for:['dry','all'] },
+  'shea butter':               { flag:'beneficial', good_for:['dry'] },
+  'butyrospermum parkii':      { flag:'beneficial', good_for:['dry'] },
+  'adenosine':                 { flag:'beneficial', good_for:['aging'] },
+  'ubiquinone':                { flag:'beneficial', good_for:['aging'] },
+  'coenzyme q10':              { flag:'beneficial', good_for:['aging'] },
+  'palmitoyl tripeptide':      { flag:'beneficial', good_for:['aging'] },
+  'palmitoyl pentapeptide':    { flag:'beneficial', good_for:['aging'] },
+  'alpha arbutin':             { flag:'beneficial', good_for:['hyperpigmentation'] },
+  'kojic acid':                { flag:'beneficial', good_for:['hyperpigmentation'] },
+  'tranexamic acid':           { flag:'beneficial', good_for:['hyperpigmentation'] },
+  'azelaic acid':              { flag:'beneficial', good_for:['acne','hyperpigmentation','redness'] },
+  'avena sativa':              { flag:'beneficial', good_for:['sensitive','dry'] },
+  'camellia sinensis':         { flag:'beneficial', good_for:['oily','aging','sensitive'] },
+  'bakuchiol':                 { flag:'beneficial', good_for:['aging','sensitive'] },
+  'ferulic acid':              { flag:'beneficial', good_for:['aging','hyperpigmentation'] },
+  'resveratrol':               { flag:'beneficial', good_for:['aging'] },
+  'tocopherol':                { flag:'beneficial', good_for:['dry','aging','all'] },
+  'jojoba':                    { flag:'beneficial', good_for:['acne','oily','dry'] },
+  'simmondsia chinensis':      { flag:'beneficial', good_for:['acne','dry'] },
+  'rosehip':                   { flag:'beneficial', good_for:['aging','hyperpigmentation'] },
+  'rosa canina':               { flag:'beneficial', good_for:['aging','hyperpigmentation'] },
+  'snail secretion filtrate':  { flag:'beneficial', good_for:['acne','aging','dry'] },
+  'propolis':                  { flag:'beneficial', good_for:['acne','sensitive'] },
+  'beta-glucan':               { flag:'beneficial', good_for:['dry','sensitive','aging'] },
+  'beta glucan':               { flag:'beneficial', good_for:['dry','sensitive','aging'] },
+  'lactic acid':               { flag:'beneficial', good_for:['dry','hyperpigmentation'] },
+  'glycolic acid':             { flag:'beneficial', good_for:['hyperpigmentation','aging','acne'] },
+  'mandelic acid':             { flag:'beneficial', good_for:['acne','hyperpigmentation','sensitive'] },
+  'neem':                      { flag:'beneficial', good_for:['acne'] },
+  'melia azadirachta':         { flag:'beneficial', good_for:['acne'] },
+};
 
-<!-- FLIGHT SHEET -->
-<div class="sheet flight-sheet" id="flight-sheet" style="z-index:3100;">
-  <div class="sheet-handle"></div>
-  <div class="sheet-hd">
-    <div class="sheet-title">✈ MY FLIGHT</div>
-    <div class="inp-row">
-      <div class="inp-field"><div class="inp-label">Flight No.</div><input class="inp" id="fs-fn" type="text" placeholder="KE123" maxlength="8" style="text-transform:uppercase;"/></div>
-      <div class="inp-field"><div class="inp-label">From</div><input class="inp" id="fs-from" type="text" placeholder="ICN" maxlength="4" style="text-transform:uppercase;"/></div>
-      <div class="inp-field"><div class="inp-label">To</div><input class="inp" id="fs-to" type="text" placeholder="CDG" maxlength="4" style="text-transform:uppercase;"/></div>
-    </div>
-    <div class="inp-row">
-      <div class="inp-field"><div class="inp-label">Departure (local)</div><input class="inp" id="fs-dep" type="time"/></div>
-      <div class="inp-field"><div class="inp-label">Duration</div><input class="inp" id="fs-dur" type="text" placeholder="11h 20m"/></div>
-    </div>
-    <div class="btn-row">
-      <button class="btn-primary" id="fs-save">SAVE ✈</button>
-      <button class="btn-sec" id="fs-clear">CLEAR</button>
-    </div>
-  </div>
-</div>
+// ── UTILS ──
+const $ = id => document.getElementById(id);
+const toast = msg => {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+};
+const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+const esc = s => s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
 
-<!-- DESTINATION SHEET -->
-<div class="sheet" id="dest-sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-hd">
-    <div class="sheet-title">WHERE YOU HEADED?</div>
-    <div class="inp-row">
-      <input class="inp" id="dest-input" type="text" placeholder="Seoul, Tokyo, Paris..." autocomplete="off" autocorrect="off" spellcheck="false" style="flex:1;"/>
-      <button class="btn-primary" id="dest-go" style="flex:0;padding:9px 14px;margin-top:0;">GO ↗</button>
-    </div>
-  </div>
-  <div class="sheet-body" id="dest-body">
-    <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--gray);text-align:center;padding:20px 0;">Enter a destination to see<br/>weather + places + what's trending ✦</div>
-  </div>
-</div>
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
 
-<!-- TIMEZONE SHEET -->
-<div class="sheet" id="tz-sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-hd">
-    <div class="sheet-title">🕐 TIME ZONES</div>
-    <div class="inp-row" style="margin-bottom:0;">
-      <input class="inp" id="tz-dest-input" type="text" placeholder="Destination city..." autocomplete="off" style="flex:1;"/>
-      <button class="btn-primary" id="tz-go" style="flex:0;padding:9px 14px;">SET</button>
-    </div>
-  </div>
-  <div class="sheet-body" id="tz-body">
-    <div id="tz-clocks" class="tz-grid"></div>
-    <div class="hint" id="tz-hint">Enter a destination city to compare time zones.</div>
-  </div>
-</div>
+// ── ANALYSIS ──
+function parseIngs(text) {
+  if (!text) return [];
+  return text.toLowerCase()
+    .split(/[,;\/]/)
+    .map(i => i.replace(/\*+|\d+(\.\d+)?%?|\(.*?\)|^\d+\.\s*/g, '').replace(/\s+/g, ' ').trim())
+    .filter(i => i.length > 2);
+}
 
-<!-- SLEEP SHEET -->
-<div class="sheet" id="sleep-sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-hd"><div class="sheet-title">💤 SLEEP GUIDE</div></div>
-  <div class="sheet-body" id="sleep-body">
-    <div style="font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--gray);text-align:center;padding:20px 0;">Add your flight first to get<br/>personalised sleep advice ✦</div>
-  </div>
-</div>
+function analyze(ingredientsText) {
+  if (!profile || !ingredientsText) return null;
+  const parsed = parseIngs(ingredientsText);
+  const traits = new Set([profile.skinType, ...profile.concerns]);
 
-<!-- SKY NOTES SHEET -->
-<div class="sheet" id="notes-sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-hd">
-    <div class="sheet-title">✍ SKY NOTES</div>
-    <div class="note-compose">
-      <textarea class="note-textarea" id="note-text" maxlength="120" placeholder="Leave a note from the sky... others will see it on the map ✦"></textarea>
-      <div class="note-meta-row">
-        <span class="note-char-count" id="note-chars">0 / 120</span>
-        <button class="btn-primary" id="note-post" style="flex:0;padding:9px 16px;">POST ✦</button>
+  const seen = new Set();
+  const flags = [], benefits = [];
+
+  for (const [name, data] of Object.entries(DB)) {
+    if (seen.has(name)) continue;
+    const found = parsed.some(i => i.includes(name) || (name.length > 6 && name.includes(i) && i.length > 5));
+    if (!found) continue;
+    seen.add(name);
+
+    if (data.flag !== 'beneficial') {
+      if (data.bad_for?.some(t => traits.has(t))) flags.push({ name, ...data });
+    } else {
+      if (data.good_for?.some(g => g === 'all' || traits.has(g))) benefits.push({ name, ...data });
+    }
+  }
+
+  const penalty = flags.reduce((s, f) => s + (f.severity || 3), 0);
+  const score = Math.max(0, Math.min(100, 70 - penalty * 7 + benefits.length * 4));
+  const grade = score >= 82 ? 'A' : score >= 62 ? 'B' : score >= 42 ? 'C' : 'D';
+  return { grade, score, flags, benefits };
+}
+
+function gradeClass(g) { return { A:'g-A', B:'g-B', C:'g-C', D:'g-D' }[g] || 'g-x'; }
+function gradeText(g) {
+  return { A:'Great match', B:'Good match', C:'Use caution', D:'Not recommended' }[g] || 'No data';
+}
+
+// ── OPEN BEAUTY FACTS ──
+async function searchOBF(q) {
+  const url = `https://world.openbeautyfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&fields=code,product_name,brands,ingredients_text,image_front_url&page_size=18`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('API error');
+  const data = await res.json();
+  return (data.products || []).filter(p => p.product_name && p.product_name.trim());
+}
+
+// ── BUY LINKS ──
+function buyLinks(name, brand) {
+  const q = encodeURIComponent([brand, name].filter(Boolean).join(' '));
+  return [
+    { name:'Amazon',            url:`https://www.amazon.com/s?k=${q}`,                         icon:'🛒' },
+    { name:'iHerb',             url:`https://www.iherb.com/search?query=${q}`,                 icon:'🌿' },
+    { name:'Sephora',           url:`https://www.sephora.com/search?keyword=${q}`,             icon:'💄' },
+    { name:'Olive Young Global',url:`https://global.oliveyoung.com/search?keyword=${q}`,      icon:'🌸' },
+  ];
+}
+
+// ── PROFILE DISPLAY ──
+const TYPE_LABELS = { oily:'Oily', dry:'Dry', combination:'Combination', sensitive:'Sensitive', normal:'Normal' };
+const CONCERN_LABELS = { acne:'Acne', dry:'Dryness', aging:'Anti-Aging', hyperpigmentation:'Dark Spots', redness:'Redness' };
+
+function updateHomeProfile() {
+  if (!profile) return;
+  const parts = [TYPE_LABELS[profile.skinType] || cap(profile.skinType), ...profile.concerns.map(c => CONCERN_LABELS[c] || cap(c))];
+  $('profile-tag').textContent = '👤 ' + parts.join(' · ');
+}
+
+// ── ONBOARDING ──
+let obType = null;
+const obConcerns = new Set();
+
+document.querySelectorAll('.skin-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.skin-card').forEach(c => c.classList.remove('sel'));
+    card.classList.add('sel');
+    obType = card.dataset.t;
+    $('ob-next').disabled = false;
+  });
+});
+
+$('ob-next').addEventListener('click', () => {
+  if (!obType) return;
+  $('ob-s1').style.display = 'none';
+  $('ob-s2').style.display = 'flex';
+  $('ob-p1').classList.add('done');
+});
+
+document.querySelectorAll('.concern-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const c = chip.dataset.c;
+    if (c === 'none') {
+      obConcerns.clear();
+      document.querySelectorAll('.concern-chip').forEach(ch => ch.classList.remove('sel'));
+      chip.classList.add('sel');
+      obConcerns.add('none');
+    } else {
+      const noneBtn = document.querySelector('.concern-chip[data-c="none"]');
+      noneBtn.classList.remove('sel');
+      obConcerns.delete('none');
+      if (obConcerns.has(c)) { obConcerns.delete(c); chip.classList.remove('sel'); }
+      else { obConcerns.add(c); chip.classList.add('sel'); }
+    }
+  });
+});
+
+$('ob-back').addEventListener('click', () => {
+  $('ob-s2').style.display = 'none';
+  $('ob-s1').style.display = 'flex';
+  $('ob-p1').classList.remove('done');
+});
+
+$('ob-finish').addEventListener('click', () => {
+  if (!obType) return;
+  const p = { skinType: obType, concerns: [...obConcerns].filter(c => c !== 'none') };
+  localStorage.setItem(PKEY, JSON.stringify(p));
+  profile = p;
+  updateHomeProfile();
+  showView('view-home');
+  toast('Profile saved ✓');
+});
+
+// ── HOME ──
+function doSearch(q) {
+  q = q.trim();
+  if (!q) return;
+  $('res-inp').value = q;
+  showView('view-results');
+  loadResults(q);
+}
+
+$('home-go').addEventListener('click', () => doSearch($('home-inp').value));
+$('home-inp').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch($('home-inp').value); });
+document.querySelectorAll('.sugg-chip').forEach(b => {
+  b.addEventListener('click', () => doSearch(b.dataset.q));
+});
+$('profile-btn').addEventListener('click', () => {
+  obType = null; obConcerns.clear();
+  document.querySelectorAll('.skin-card, .concern-chip').forEach(el => el.classList.remove('sel'));
+  $('ob-next').disabled = true;
+  $('ob-s1').style.display = 'flex'; $('ob-s2').style.display = 'none';
+  $('ob-p1').classList.remove('done'); $('ob-p2').classList.remove('done');
+  showView('view-onboard');
+});
+
+// ── RESULTS ──
+$('res-back').addEventListener('click', () => showView('view-home'));
+$('res-go').addEventListener('click', () => { const q = $('res-inp').value.trim(); if (q) loadResults(q); });
+$('res-inp').addEventListener('keydown', e => { if (e.key === 'Enter') { const q = $('res-inp').value.trim(); if (q) loadResults(q); } });
+
+const pCache = {};
+
+async function loadResults(query) {
+  const list = $('res-list');
+  const meta = $('res-meta');
+  list.innerHTML = `<div class="state-box"><div class="spinner"></div><div class="state-sub">Searching Open Beauty Facts...</div></div>`;
+  meta.textContent = '';
+
+  try {
+    const products = await searchOBF(query);
+    if (!products.length) {
+      list.innerHTML = `<div class="state-box"><div class="state-emoji">🔍</div><div class="state-title">No products found</div><div class="state-sub">Try a different name, brand, or ingredient.</div></div>`;
+      return;
+    }
+
+    meta.textContent = `${products.length} product${products.length !== 1 ? 's' : ''} found`;
+
+    list.innerHTML = products.map((p, i) => {
+      const id = (p.code || `p${i}`).replace(/['"<>]/g, '');
+      pCache[id] = p;
+      const an = analyze(p.ingredients_text);
+      const hasIng = !!p.ingredients_text;
+
+      let badgeHtml;
+      if (!hasIng) {
+        badgeHtml = `<span class="gbadge g-x">No ingredient data</span>`;
+      } else if (an) {
+        badgeHtml = `<span class="gbadge ${gradeClass(an.grade)}">${an.grade} — ${gradeText(an.grade)}</span>`;
+      } else {
+        badgeHtml = `<span class="gbadge g-x">Profile missing</span>`;
+      }
+
+      const imgHtml = p.image_front_url
+        ? `<img class="prod-img" src="${esc(p.image_front_url)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/><div class="prod-img-ph" style="display:none;">🧴</div>`
+        : `<div class="prod-img-ph">🧴</div>`;
+
+      const brand = p.brands ? esc(p.brands.split(',')[0].trim()) : '';
+
+      return `<div class="product-card" onclick="openProduct('${id}')">
+        ${imgHtml}
+        <div class="prod-info">
+          ${brand ? `<div class="prod-brand">${brand}</div>` : ''}
+          <div class="prod-name">${esc(p.product_name)}</div>
+          ${badgeHtml}
+        </div>
+        <div class="prod-chevron">›</div>
+      </div>`;
+    }).join('');
+
+  } catch {
+    list.innerHTML = `<div class="state-box"><div class="state-emoji">😕</div><div class="state-title">Couldn't load results</div><div class="state-sub">Check your connection and try again.</div></div>`;
+  }
+}
+
+// ── PRODUCT DETAIL ──
+$('prod-back').addEventListener('click', () => showView('view-results'));
+
+function openProduct(id) {
+  const p = pCache[id];
+  if (!p) return;
+  showView('view-product');
+  $('prod-nav-title').textContent = p.product_name || '';
+  renderProduct(p);
+}
+
+function renderProduct(p) {
+  const an = analyze(p.ingredients_text);
+  const hasIng = !!p.ingredients_text;
+  const brand = p.brands ? p.brands.split(',')[0].trim() : '';
+  const links = buyLinks(p.product_name, brand);
+
+  const imgHtml = p.image_front_url
+    ? `<img class="hero-img" src="${esc(p.image_front_url)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"/><div class="hero-img-ph" style="display:none;">🧴</div>`
+    : `<div class="hero-img-ph">🧴</div>`;
+
+  // Score section
+  let scoreHtml = '';
+  if (an) {
+    const fillCls = an.score >= 70 ? 'sf-hi' : an.score >= 45 ? 'sf-md' : 'sf-lo';
+    scoreHtml = `
+      <div class="section">
+        <div class="sec-title">📊 Skin Match Score</div>
+        <div class="score-row"><span>${gradeText(an.grade)}</span><span><strong>${an.score}</strong> / 100</span></div>
+        <div class="score-track"><div class="score-fill ${fillCls}" style="width:${an.score}%"></div></div>
+      </div>`;
+  }
+
+  // Flags section
+  let flagsBody = '';
+  if (!hasIng) {
+    flagsBody = `<p class="empty-note">No ingredient list available for this product in the database.</p>`;
+  } else if (an && an.flags.length > 0) {
+    flagsBody = an.flags.map(f => {
+      const sev = f.severity >= 4 ? 'hi' : f.severity >= 3 ? 'md' : 'lo';
+      const icon = f.flag === 'comedogenic' ? '🔴' : f.flag === 'allergen' ? '⚠️' : '⚡';
+      return `<div class="flag-item">
+        <div class="flag-ic fi-${sev}">${icon}</div>
+        <div>
+          <div class="flag-name">${esc(cap(f.name))}</div>
+          <div class="flag-sub">${cap(f.flag)}${f.note ? ' · ' + f.note : ''}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } else if (an) {
+    flagsBody = `<p class="empty-note">🎉 No flagged ingredients for your skin type.</p>`;
+  }
+
+  // Benefits section
+  let bensBody = '';
+  if (hasIng && an) {
+    if (an.benefits.length > 0) {
+      bensBody = `<div class="benefit-chips">${an.benefits.map(b => `<span class="benefit-chip">✓ ${esc(cap(b.name))}</span>`).join('')}</div>`;
+    } else {
+      bensBody = `<p class="empty-note">No standout beneficial ingredients detected for your skin.</p>`;
+    }
+  }
+
+  // All ingredients toggle
+  const ingToggle = hasIng ? `
+    <div class="section">
+      <button class="ing-toggle" onclick="this.nextElementSibling.classList.toggle('open'); this.textContent=this.nextElementSibling.classList.contains('open')?'Hide full list ↑':'Show full ingredient list ↓'">Show full ingredient list ↓</button>
+      <div class="ing-text">${esc(p.ingredients_text)}</div>
+    </div>` : '';
+
+  $('prod-content').innerHTML = `
+    <div class="product-hero">
+      ${imgHtml}
+      <div class="hero-info">
+        ${brand ? `<div class="hero-brand">${esc(brand)}</div>` : ''}
+        <div class="hero-name">${esc(p.product_name)}</div>
+        ${an
+          ? `<span class="gbadge ${gradeClass(an.grade)}" style="padding:5px 12px;font-size:0.78rem;">${an.grade} — ${gradeText(an.grade)}</span>`
+          : `<span class="gbadge g-x" style="padding:5px 12px;font-size:0.78rem;">No data</span>`
+        }
       </div>
     </div>
-  </div>
-  <div class="sheet-body">
-    <div class="sec-head"><div class="sec-label">📍 NOTES FROM THE SKY <span class="sec-tag">SHARED</span></div></div>
-    <div class="notes-list" id="notes-list"></div>
-  </div>
-</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-// ── UTILS ──
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-const $=id=>document.getElementById(id);
-const toast=(msg,type='')=>{ const t=$('toast'); t.textContent=msg; t.className='toast show '+type; setTimeout(()=>t.className='toast',3000); };
-function upd(el,v){ el.classList.add('updating'); el.textContent=v; setTimeout(()=>el.classList.remove('updating'),220); }
+    ${scoreHtml}
 
-// ── MAP ──
-const map = L.map('map',{zoomControl:false,attributionControl:true,tap:true,tapTolerance:15}).setView([37.5665,126.9780],5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap',crossOrigin:true}).addTo(map);
+    <div class="section">
+      <div class="sec-title">⚠️ Flagged Ingredients <span class="sec-count">${an ? an.flags.length : '?'}</span></div>
+      ${flagsBody}
+    </div>
 
-const planeIcon = L.divIcon({className:'',html:`<div class="plane-marker"><div class="p-ring"></div><div class="p-ring p-ring-2"></div><div class="p-dot"><svg width="11" height="11" viewBox="0 0 24 24" fill="#1a5cff"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div></div>`,iconSize:[48,48],iconAnchor:[24,24]});
+    <div class="section">
+      <div class="sec-title">✅ Good for Your Skin <span class="sec-count">${an ? an.benefits.length : '?'}</span></div>
+      ${bensBody || '<p class="empty-note">Add your profile to see personalized benefits.</p>'}
+    </div>
 
-let marker=null, userLat=null, userLon=null, isCaching=false;
-let overflyCurrent='', overflyTimer=null;
+    ${ingToggle}
 
-// ── GPS ──
-function setGpsStatus(s){ $('gps-status').className='status-pill '+s; $('gps-status').querySelector('span').textContent=s==='active'?'GPS ●':s==='error'?'GPS ✕':'GPS'; }
-
-function onPos({coords:{latitude:lat,longitude:lon,accuracy:acc}}){
-  userLat=lat; userLon=lon; setGpsStatus('active');
-  upd($('val-lat'),lat.toFixed(4)+'°');
-  upd($('val-lon'),lon.toFixed(4)+'°');
-  upd($('val-acc'),acc<1000?Math.round(acc)+'m':(acc/1000).toFixed(1)+'km');
-  if(!marker){ marker=L.marker([lat,lon],{icon:planeIcon}).addTo(map); map.setView([lat,lon],8); }
-  else marker.setLatLng([lat,lon]);
-  // overfly update every 60s or first time
-  if(!overflyCurrent) updateOverfly(lat,lon);
-}
-function onErr(e){ setGpsStatus('error'); toast(e.code===1?'GPS 권한을 허용해주세요':e.code===2?'GPS 신호 없음':'GPS 오류','error'); }
-navigator.geolocation
-  ? navigator.geolocation.watchPosition(onPos,onErr,{enableHighAccuracy:true,timeout:10000,maximumAge:3000})
-  : (setGpsStatus('error'),toast('GPS 미지원 기기','error'));
-
-// ── OVERFLY (which country) ──
-async function updateOverfly(lat,lon){
-  try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=3`);
-    const d = await r.json();
-    const country = d.address?.country || d.display_name?.split(',').pop().trim() || '?';
-    const code = d.address?.country_code?.toUpperCase() || '';
-    overflyCurrent = country;
-    $('overfly-country').textContent = (code ? code + ' · ' : '') + country.toUpperCase();
-    // refresh every 2 min
-    clearTimeout(overflyTimer);
-    overflyTimer = setTimeout(()=>{ if(userLat) updateOverfly(userLat,userLon); }, 120000);
-  } catch { $('overfly-country').textContent = 'OFFLINE'; }
+    <div class="section" style="margin-bottom:0;">
+      <div class="sec-title">🛒 Where to Buy</div>
+      ${links.map(l => `<a class="buy-link" href="${l.url}" target="_blank" rel="noopener">
+        <div class="buy-ic">${l.icon}</div>
+        <div class="buy-name">${l.name}</div>
+        <div class="buy-arrow">→</div>
+      </a>`).join('')}
+    </div>
+    <div style="height:36px;"></div>
+  `;
 }
 
-// ── TILE CACHE ──
-function llt(lat,lon,z){ const n=2**z,x=Math.floor((lon+180)/360*n),r=lat*Math.PI/180,y=Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n); return{x:Math.max(0,Math.min(n-1,x)),y:Math.max(0,Math.min(n-1,y))}; }
-async function cacheTiles(){
-  if(isCaching)return; isCaching=true;
-  const btn=$('cache-btn'),icon=$('cache-icon'),label=$('cache-label');
-  btn.classList.add('loading'); icon.className='spin'; icon.textContent='↻'; label.textContent='SAVING...';
-  const b=map.getBounds(),z=map.getZoom(),urls=[];
-  for(let zz=Math.max(z-2,3);zz<=Math.min(z+2,14);zz++){
-    const nw=llt(b.getNorth(),b.getWest(),zz),se=llt(b.getSouth(),b.getEast(),zz);
-    for(let x=nw.x;x<=se.x;x++) for(let y=nw.y;y<=se.y;y++) urls.push(`https://${'abc'[Math.abs(x+y)%3]}.tile.openstreetmap.org/${zz}/${x}/${y}.png`);
-  }
-  if(urls.length>400){ toast('Too many tiles — zoom in','error'); isCaching=false; btn.classList.remove('loading'); icon.className=''; icon.textContent='↓'; label.textContent='SAVE MAP'; return; }
-  label.textContent='0/'+urls.length;
-  if('caches' in window){
-    const c=await caches.open('whereyouat-tiles-v1'); let n=0;
-    for(const u of urls){ try{ if(!await c.match(u))await c.add(u); n++; if(n%10===0)label.textContent=n+'/'+urls.length; }catch{} }
-    $('cache-status').className='status-pill active';
-    toast('✓ '+n+' tiles saved!','success');
-  } else toast('Cache API not supported','error');
-  isCaching=false; btn.classList.remove('loading'); icon.className=''; icon.textContent='↓'; label.textContent='SAVE MAP';
+// ── INIT ──
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if (profile) {
+  updateHomeProfile();
+  showView('view-home');
 }
-$('cache-btn').addEventListener('click',cacheTiles);
-$('center-btn').addEventListener('click',()=>userLat?map.flyTo([userLat,userLon],Math.max(map.getZoom(),8),{duration:0.6}):toast('GPS 신호 대기 중...',''));
-$('zoom-in-btn').addEventListener('click',()=>map.zoomIn());
-$('zoom-out-btn').addEventListener('click',()=>map.zoomOut());
-(async()=>{ if('caches' in window){ const c=await caches.open('whereyouat-tiles-v1'); if((await c.keys()).length>0)$('cache-status').className='status-pill active'; } })();
-
-// ── SHEET MANAGER ──
-const sheets=['flight-sheet','dest-sheet','tz-sheet','sleep-sheet','notes-sheet'];
-function openSheet(id){
-  sheets.forEach(s=>document.getElementById(s).classList.remove('open'));
-  $(id).classList.add('open');
-  $('sheet-overlay').classList.add('show');
-}
-function closeAll(){
-  sheets.forEach(s=>document.getElementById(s).classList.remove('open'));
-  $('sheet-overlay').classList.remove('show');
-}
-$('sheet-overlay').addEventListener('click',closeAll);
-
-// ── FLIGHT ETA ──
-let flightTimer=null;
-function parseDur(s){
-  if(!s)return null; s=s.trim().toLowerCase();
-  const hm=s.match(/(\d+)h\s*(\d*)m?/); if(hm)return parseInt(hm[1])*60+(parseInt(hm[2])||0);
-  const colon=s.match(/^(\d+):(\d+)$/); if(colon)return parseInt(colon[1])*60+parseInt(colon[2]);
-  const m=parseInt(s); return isNaN(m)?null:m;
-}
-function fmtCountdown(ms){ if(ms<=0)return'LANDED'; const t=Math.floor(ms/60000),h=Math.floor(t/60),m=t%60; return h>0?h+'h '+m+'m left':m+'m left'; }
-function saveFlt(d){ try{localStorage.setItem('wya_flt',JSON.stringify(d));}catch{} }
-function loadFlt(){ try{const d=localStorage.getItem('wya_flt');return d?JSON.parse(d):null;}catch{return null;} }
-function applyFlt(d){
-  if(!d)return;
-  const now=new Date(),parts=d.dep.split(':'),dep=new Date(now);
-  dep.setHours(parseInt(parts[0]),parseInt(parts[1]),0,0);
-  if(now-dep>12*3600000) dep.setDate(dep.getDate()+1);
-  const arr=dep.getTime()+d.dur*60000;
-  const eta=new Date(arr).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  $('eta-fn').textContent=d.fn.toUpperCase();
-  $('eta-route').textContent=d.from.toUpperCase()+' → '+d.to.toUpperCase();
-  $('eta-val').textContent='ETA '+eta;
-  $('flight-bar').classList.add('has-flight');
-  const tick=()=>$('eta-cd').textContent=fmtCountdown(arr-Date.now());
-  tick(); if(flightTimer)clearInterval(flightTimer); flightTimer=setInterval(tick,30000);
-  // also update sleep sheet
-  renderSleep(d);
-}
-$('flight-bar').addEventListener('click',()=>{
-  openSheet('flight-sheet');
-  const s=loadFlt(); if(s){ $('fs-fn').value=s.fn||''; $('fs-from').value=s.from||''; $('fs-to').value=s.to||''; $('fs-dep').value=s.dep||''; $('fs-dur').value=s.durRaw||''; }
-});
-$('fs-save').addEventListener('click',()=>{
-  const fn=$('fs-fn').value.trim(),from=$('fs-from').value.trim(),to=$('fs-to').value.trim(),dep=$('fs-dep').value.trim(),durRaw=$('fs-dur').value.trim();
-  if(!fn||!dep||!durRaw){toast('편명, 출발시간, 비행시간을 입력해주세요','error');return;}
-  const dur=parseDur(durRaw); if(!dur){toast('비행시간 형식: 11h 20m','error');return;}
-  const d={fn,from:from||'???',to:to||'???',dep,dur,durRaw};
-  saveFlt(d); applyFlt(d); closeAll(); toast('✈ '+fn.toUpperCase()+' 등록 완료!','success');
-});
-$('fs-clear').addEventListener('click',()=>{
-  localStorage.removeItem('wya_flt'); $('flight-bar').classList.remove('has-flight');
-  if(flightTimer)clearInterval(flightTimer);
-  ['fs-fn','fs-from','fs-to','fs-dep','fs-dur'].forEach(id=>$(id).value='');
-  closeAll(); toast('항공편 삭제됨','');
-});
-const savedFlt=loadFlt(); if(savedFlt)applyFlt(savedFlt);
-
-// ── DESTINATION ──
-let destCache={};
-$('dest-btn').addEventListener('click',()=>{ openSheet('dest-sheet'); setTimeout(()=>$('dest-input').focus(),400); });
-$('dest-go').addEventListener('click',handleDest);
-$('dest-input').addEventListener('keydown',e=>{ if(e.key==='Enter')handleDest(); });
-async function handleDest(){
-  const city=$('dest-input').value.trim(); if(!city)return;
-  $('dest-body').innerHTML='<div class="skeleton skel-weather"></div><div class="skeleton skel-card"></div><div class="skeleton skel-card"></div><div class="skeleton skel-card"></div>';
-  const [wx,content]=await Promise.all([fetchWeather(city),fetchPlaces(city)]);
-  let html='';
-  if(wx) html+=`<div class="weather-block"><div class="weather-left"><div class="weather-city">${wx.name.toUpperCase()}, ${wx.country.toUpperCase()}</div><div class="weather-temp">${wx.temp}°C</div><div class="weather-desc">${wxDesc(wx.code)}</div></div><div class="weather-right"><div class="weather-icon">${wxIcon(wx.code)}</div><div class="weather-meta">💨 ${wx.wind}km/h · 💧 ${wx.humidity}%</div></div></div>`;
-  else html+=`<div class="weather-block"><div class="weather-left"><div class="weather-city">${city.toUpperCase()}</div><div class="weather-desc" style="color:#555;margin-top:6px;font-size:0.48rem;">WEATHER UNAVAILABLE OFFLINE</div></div><div class="weather-right"><div class="weather-icon">🌍</div></div></div>`;
-  if(content.top_places?.length){
-    html+=`<div class="sec-head"><div class="sec-label">📍 MUST VISIT <span class="sec-tag">TOP PICKS</span></div></div><div class="places-grid">`;
-    content.top_places.forEach(p=>{ html+=`<div class="place-card"><div class="place-emoji">${p.emoji}</div><div class="place-info"><div class="place-name">${p.name}</div><div class="place-meta">${p.tip}</div></div><div class="place-tag">${p.category}</div></div>`; });
-    html+=`</div>`;
-  }
-  if(content.trending?.length){
-    html+=`<div class="sec-head" style="margin-top:14px;"><div class="sec-label">🔥 TRENDING <span class="sec-tag">NOW</span></div></div><div class="trend-grid">`;
-    content.trending.forEach(t=>{ html+=`<div class="trend-chip${t.hot?' hot':''}">${t.emoji} ${t.label}</div>`; });
-    html+=`</div>`;
-  }
-  $('dest-body').innerHTML=html;
-}
-async function fetchWeather(city){
-  try{
-    const g=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=en&format=json');
-    const gd=await g.json(); if(!gd.results?.length)return null;
-    const {latitude:lat,longitude:lon,name,country}=gd.results[0];
-    const w=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weathercode,windspeed_10m,relative_humidity_2m&temperature_unit=celsius&windspeed_unit=kmh');
-    const wd=await w.json(); const c=wd.current;
-    return{name,country,temp:Math.round(c.temperature_2m),code:c.weathercode,wind:Math.round(c.windspeed_10m),humidity:c.relative_humidity_2m};
-  }catch{return null;}
-}
-function wxIcon(c){ if(c===0)return'☀️';if(c<=2)return'⛅';if(c<=3)return'☁️';if(c<=49)return'🌫️';if(c<=59)return'🌦️';if(c<=69)return'🌧️';if(c<=79)return'❄️';if(c<=82)return'🌦️';if(c<=99)return'⛈️';return'🌡️'; }
-function wxDesc(c){ if(c===0)return'CLEAR SKY';if(c<=2)return'PARTLY CLOUDY';if(c<=3)return'OVERCAST';if(c<=49)return'FOGGY';if(c<=59)return'DRIZZLE';if(c<=69)return'RAINY';if(c<=79)return'SNOWY';if(c<=82)return'RAIN SHOWERS';if(c<=99)return'THUNDERSTORM';return'UNKNOWN'; }
-async function fetchPlaces(city){
-  if(destCache[city.toLowerCase()])return destCache[city.toLowerCase()];
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:'You are a travel guide. For city "'+city+'", return ONLY valid JSON (no markdown): {"top_places":[{"emoji":"","name":"","category":"","tip":""}],"trending":[{"emoji":"","label":"","hot":false}]} — 5 places, 8 trending items.'}]})});
-    const data=await res.json();
-    const text=data.content?.find(b=>b.type==='text')?.text||'{}';
-    const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
-    destCache[city.toLowerCase()]=parsed; return parsed;
-  }catch{ return{top_places:[{emoji:'🏛️',name:'City Center',category:'landmark',tip:'Best visited in the morning.'},{emoji:'🍜',name:'Local Market',category:'food',tip:'Try the street food here.'},{emoji:'🌿',name:'City Park',category:'nature',tip:'Great for an evening walk.'},{emoji:'🎨',name:'Art District',category:'culture',tip:'Weekend galleries are free.'},{emoji:'☕',name:'Old Town Café',category:'cafe',tip:'Famous for local brews.'}],trending:[{emoji:'🔥',label:'Local Eats',hot:true},{emoji:'📸',label:'Photo Spots',hot:true},{emoji:'🛍️',label:'Night Market',hot:false},{emoji:'🍵',label:'Specialty Coffee',hot:true},{emoji:'🏃',label:'Running Routes',hot:false},{emoji:'🎵',label:'Live Music',hot:false},{emoji:'🌅',label:'Sunrise Views',hot:false},{emoji:'🍰',label:'Dessert Cafes',hot:true}]}; }
-}
-
-// ── TIMEZONE ──
-let tzDestCity='', tzTimer=null;
-$('tz-btn').addEventListener('click',()=>{ openSheet('tz-sheet'); renderTzClocks(); setTimeout(()=>$('tz-dest-input').focus(),400); });
-$('tz-go').addEventListener('click',setTzDest);
-$('tz-dest-input').addEventListener('keydown',e=>{ if(e.key==='Enter')setTzDest(); });
-
-async function setTzDest(){
-  const city=$('tz-dest-input').value.trim(); if(!city)return;
-  tzDestCity=city;
-  $('tz-hint').textContent='Loading...';
-  try{
-    const g=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(city)+'&count=1&language=en&format=json');
-    const gd=await g.json();
-    if(gd.results?.length){ tzDestCity=gd.results[0].name+' ('+gd.results[0].country+')'; }
-  }catch{}
-  renderTzClocks();
-  if(!tzTimer) tzTimer=setInterval(renderTzClocks,30000);
-}
-
-function renderTzClocks(){
-  const now=new Date();
-  let html='';
-  // current location
-  html+=`<div class="tz-card"><div class="tz-label">YOU ARE HERE</div><div class="tz-city">${overflyCurrent||'CURRENT LOCATION'}</div><div class="tz-time">${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div class="tz-date">${now.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</div></div>`;
-  // destination
-  if(tzDestCity){
-    const flt=loadFlt();
-    if(flt&&flt.to&&flt.to!=='???'){
-      // use saved dest
-      html+=`<div class="tz-card"><div class="tz-label">DESTINATION</div><div class="tz-city">${flt.to.toUpperCase()}</div><div class="tz-time">${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div class="tz-date">${now.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</div><div class="tz-diff">Set exact city for TZ diff</div></div>`;
-    } else {
-      html+=`<div class="tz-card"><div class="tz-label">DESTINATION</div><div class="tz-city">${tzDestCity.toUpperCase()}</div><div class="tz-time">${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div><div class="tz-date">${now.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}</div></div>`;
-    }
-    $('tz-hint').textContent='💡 Times shown in your device timezone. For exact destination time, set your phone to destination timezone before landing.';
-  } else {
-    html+=`<div class="tz-card" style="border:2px dashed var(--border);background:transparent;"><div class="tz-label" style="color:var(--border);">DESTINATION</div><div class="tz-city" style="color:var(--border);margin-top:8px;">Enter city above</div></div>`;
-  }
-  $('tz-clocks').innerHTML=html;
-}
-
-// ── SLEEP GUIDE ──
-$('sleep-btn').addEventListener('click',()=>{ openSheet('sleep-sheet'); const flt=loadFlt(); if(flt)renderSleep(flt); });
-
-function renderSleep(flt){
-  const dur=flt.dur; // minutes
-  const hours=Math.floor(dur/60), mins=dur%60;
-  let tips=[];
-  if(dur<180){ tips=[{e:'🌙',t:'SHORT FLIGHT',d:'Under 3 hours — skip sleep. Stay hydrated and do light stretches instead.'},{e:'💧',t:'HYDRATE',d:'Cabin air is very dry. Drink water every hour to stay fresh on arrival.'},{e:'🎧',t:'NOISE CANCEL',d:'Use headphones to reduce fatigue even without sleeping.'}]; }
-  else if(dur<420){ tips=[{e:'😴',t:'1-2 HOUR NAP',d:'A short sleep cycle (90 min) will refresh you without grogginess.'},{e:'⏰',t:'SET AN ALARM',d:'Wake '+(Math.round(dur*0.6/60))+'h after takeoff to have time to freshen up.'},{e:'💊',t:'SKIP MELATONIN',d:'Too short to need it. A neck pillow and eye mask is enough.'},{e:'🍽️',t:'EAT LIGHT',d:'Heavy meals make sleep quality worse at altitude.'}]; }
-  else { tips=[{e:'🌙',t:'SLEEP FIRST HALF',d:'Try to sleep in the first '+(Math.round(dur*0.5/60))+'h. Match destination night cycle.'},{e:'💊',t:'MELATONIN OK',d:'0.5–3mg melatonin 30 min before you want to sleep can help.'},{e:'🚶',t:'MOVE BEFORE SLEEP',d:'Walk the aisle once before sleeping to improve circulation.'},{e:'☀️',t:'WAKE BEFORE LANDING',d:'Stay awake the last 2h to adjust to destination daylight.'},{e:'👁️',t:'EYE MASK + EARPLUGS',d:'Blocking light and sound is the most effective sleep hack.'}]; }
-  let html=`<div class="sleep-card"><div class="sleep-head">✈ ${flt.fn.toUpperCase()} · ${hours}h ${mins}m FLIGHT</div>`;
-  tips.forEach(tip=>{ html+=`<div class="sleep-row"><div class="sleep-emoji">${tip.e}</div><div class="sleep-info"><div class="sleep-title">${tip.t}</div><div class="sleep-desc">${tip.d}</div></div></div>`; });
-  html+=`</div><div class="hint">💡 Adjust for your body. These are general guidelines based on flight duration.</div>`;
-  $('sleep-body').innerHTML=html;
-}
-
-// ── SKY NOTES (shared via Storage API) ──
-const NOTE_KEY='sky-notes-global';
-let noteMarkers={};
-
-$('notes-btn').addEventListener('click',()=>{ openSheet('notes-sheet'); loadNotes(); });
-$('note-text').addEventListener('input',()=>{ $('note-chars').textContent=$('note-text').value.length+' / 120'; });
-$('note-post').addEventListener('click',postNote);
-
-async function postNote(){
-  const text=$('note-text').value.trim();
-  if(!text){toast('메모를 입력해주세요','error');return;}
-  if(!userLat){toast('GPS 신호가 필요해요','error');return;}
-  const note={id:Date.now(),text,lat:parseFloat(userLat.toFixed(4)),lon:parseFloat(userLon.toFixed(4)),country:overflyCurrent||'?',ts:new Date().toISOString()};
-  try{
-    const existing=await getSharedNotes();
-    existing.unshift(note);
-    const trimmed=existing.slice(0,100); // max 100 notes
-    await window.storage.set(NOTE_KEY,JSON.stringify(trimmed),true);
-    $('note-text').value=''; $('note-chars').textContent='0 / 120';
-    toast('✦ 메모 등록됨!','success');
-    renderNoteOnMap(note);
-    loadNotes();
-  }catch(e){ console.error(e); toast('저장 실패','error'); }
-}
-
-async function getSharedNotes(){
-  try{ const r=await window.storage.get(NOTE_KEY,true); return r?JSON.parse(r.value):[]; }catch{ return[]; }
-}
-
-async function loadNotes(){
-  const notes=await getSharedNotes();
-  if(!notes.length){ $('notes-list').innerHTML='<div class="note-empty">No sky notes yet.<br/>Be the first to leave one ✦</div>'; return; }
-  $('notes-list').innerHTML=notes.map(n=>`<div class="note-item" onclick="flyToNote(${n.lat},${n.lon})"><div class="note-item-text">${escHtml(n.text)}</div><div class="note-item-meta"><span class="note-item-loc">📍 ${n.country||'?'} · ${n.lat},${n.lon}</span><span class="note-item-time">${timeAgo(n.ts)}</span></div></div>`).join('');
-  // render on map
-  notes.forEach(renderNoteOnMap);
-}
-
-function renderNoteOnMap(note){
-  const key=note.id;
-  if(noteMarkers[key])return;
-  const icon=L.divIcon({className:'note-pin',html:`<div class="note-pin-inner">${escHtml(note.text.slice(0,28)+(note.text.length>28?'…':''))}</div>`,iconAnchor:[60,28]});
-  const m=L.marker([note.lat,note.lon],{icon}).addTo(map);
-  m.on('click',()=>{ toast(note.text,''); });
-  noteMarkers[key]=m;
-}
-
-function flyToNote(lat,lon){ map.flyTo([lat,lon],8,{duration:0.8}); closeAll(); }
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function timeAgo(ts){
-  const d=Date.now()-new Date(ts).getTime(),m=Math.floor(d/60000),h=Math.floor(m/60),dy=Math.floor(h/24);
-  if(m<1)return'just now'; if(m<60)return m+'m ago'; if(h<24)return h+'h ago'; return dy+'d ago';
-}
-
-// load notes on map start
-setTimeout(()=>{ getSharedNotes().then(notes=>notes.forEach(renderNoteOnMap)); },1500);
-
-// ── TOOL BTN BINDINGS ──
-document.querySelectorAll('.tool-btn').forEach(b=>{ b.style.fontSize='0.52rem'; });
 </script>
 </body>
 </html>

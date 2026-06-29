@@ -1,20 +1,20 @@
 {
-  "name": "whereyouat",
-  "short_name": "whereyouat",
-  "description": "비행기 안에서도 작동하는 오프라인 GPS 지도",
+  "name": "Skinly — Ingredient Analyzer",
+  "short_name": "Skinly",
+  "description": "Personalized skincare ingredient analyzer. Find products matched to your skin type.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f5f0",
-  "theme_color": "#0a0a0a",
+  "background_color": "#F7F7F5",
+  "theme_color": "#E11D48",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%230a0f1e' rx='32'/><circle cx='96' cy='96' r='60' stroke='%234fc3f7' stroke-width='6' fill='none' opacity='0.5'/><circle cx='96' cy='96' r='35' stroke='%234fc3f7' stroke-width='3' fill='none' opacity='0.7'/><line x1='96' y1='36' x2='96' y2='156' stroke='%234fc3f7' stroke-width='2' opacity='0.3'/><line x1='36' y1='96' x2='156' y2='96' stroke='%234fc3f7' stroke-width='2' opacity='0.3'/><circle cx='96' cy='96' r='10' fill='%234fc3f7'/></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' fill='%23E11D48' rx='40'/><circle cx='96' cy='80' r='34' fill='white' opacity='0.95'/><ellipse cx='96' cy='140' rx='50' ry='28' fill='white' opacity='0.95'/></svg>",
       "sizes": "192x192",
       "type": "image/svg+xml"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%230a0f1e' rx='80'/><circle cx='256' cy='256' r='160' stroke='%234fc3f7' stroke-width='16' fill='none' opacity='0.5'/><circle cx='256' cy='256' r='90' stroke='%234fc3f7' stroke-width='8' fill='none' opacity='0.7'/><circle cx='256' cy='256' r='26' fill='%234fc3f7'/></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' fill='%23E11D48' rx='100'/><circle cx='256' cy='210' r='90' fill='white' opacity='0.95'/><ellipse cx='256' cy='370' rx='130' ry='75' fill='white' opacity='0.95'/></svg>",
       "sizes": "512x512",
       "type": "image/svg+xml"
     }
